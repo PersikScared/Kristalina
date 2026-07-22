@@ -1734,7 +1734,7 @@ hideGui.TextSize = 20
 hideGui.Parent = frame
 
 local signature = Instance.new("TextLabel")
-signature.Text = "KristaliK"
+signature.Text = "KristaliK v2"
 signature.TextScaled = true
 signature.RichText = true
 signature.Size = UDim2.new(1, 0, 0, 20)
