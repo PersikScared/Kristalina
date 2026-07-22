@@ -2918,9 +2918,6 @@ addBtn.MouseButton1Click:Connect(function()
 	newCheckpoint.Shape = Enum.PartType.Cylinder
 
 	table.insert(checkpointsT, newCheckpoint)
-	
-	newCheckpoint:SetAttribute("Index", #checkpointsT)
-
 	newCheckpoint.Anchored = true
 	refreshCheckpointsList()
 end)
@@ -3039,12 +3036,15 @@ function refreshCheckpointsList()
 		end)
 		
 		deleteBtn.MouseButton1Click:Connect(function()
-			table.remove(checkpointsT, checkpoint:GetAttribute("Index") or 0)
-			if checkpoint == currentSpawnpoint then
-				currentSpawnpoint = nil
+			local ind = table.find(checkpointsT, checkpoint)
+			if ind then
+				if checkpoint == currentSpawnpoint then
+					currentSpawnpoint = nil
+				end
+				table.remove(checkpointsT, ind)
+				checkpoint:Destroy()
+				refreshCheckpointsList()
 			end
-			checkpoint:Destroy()
-			refreshCheckpointsList()
 		end)
 		
 		textC.FocusLost:Connect(function()
