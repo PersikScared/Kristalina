@@ -3012,6 +3012,9 @@ function refreshCheckpointsList()
 		
 		deleteBtn.MouseButton1Click:Connect(function()
 			table.remove(checkpointsT, checkpoint:GetAttribute("Index") or 0)
+			if checkpoint == currentSpawnpoint then
+				currentSpawnpoint = nil
+			end
 			checkpoint:Destroy()
 			refreshCheckpointsList()
 		end)
@@ -3057,7 +3060,7 @@ function refreshCheckpointsList()
 			local char = player.Character
 			local hrp = char:FindFirstChild("HumanoidRootPart")
 			if hrp and checkpoint then
-				hrp.Position = Vector3.new(checkpoint.Position.X, checkpoint.Position.Y + 2, checkpoint.Position.Z)
+				hrp.CFrame = CFrame.new(Vector3.new(checkpoint.Position.X, checkpoint.Position.Y + 2, checkpoint.Position.Z), Vector3.new(0,0,0))
 			end
 		end)
 		
@@ -3078,7 +3081,7 @@ player.CharacterAdded:Connect(function()
 		local char = player.Character
 		local hrp = char:FindFirstChild("HumanoidRootPart")
 		if hrp and currentSpawnpoint then
-			hrp.Position = Vector3.new(currentSpawnpoint.Position.X, currentSpawnpoint.Position.Y + 2, currentSpawnpoint.Position.Z)
+			hrp.CFrame = CFrame.new(Vector3.new(currentSpawnpoint.Position.X, currentSpawnpoint.Position.Y + 2, currentSpawnpoint.Position.Z), Vector3.new(0,0,0))
 		end
 	end
 end)
