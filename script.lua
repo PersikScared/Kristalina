@@ -2225,7 +2225,7 @@ function enableESP()
 				removeESPForPlayer(otherPlayer)
 			end)
 			otherPlayer.CharacterAdded:Connect(function()
-				task.wait(2)
+				task.wait(3)
 				createESPForPlayer(otherPlayer)
 			end)
 		end
@@ -2998,6 +2998,22 @@ function refreshCheckpointsList()
 		deleteBtn.TextScaled = true
 		deleteBtn.Parent = text
 		
+		local collideBtn = Instance.new("TextButton")
+		if checkpoint.CanCollide then
+			collideBtn.Text = "Collide: ON"
+			collideBtn.BackgroundColor3 = Color3.fromRGB(220, 0, 255)
+		else
+			collideBtn.Text = "Collide: OFF"
+			collideBtn.BackgroundColor3 = Color3.fromRGB(70, 0, 85)
+		end
+		collideBtn.Size = UDim2.new(0, 25, 1, 0)
+		collideBtn.Position = UDim2.new(1, -75, 0, 0)
+		collideBtn.BackgroundColor3 = Color3.fromRGB(220, 0, 255)
+		collideBtn.TextColor3 = Color3.fromRGB(255,255,255)
+		collideBtn.Font = Enum.Font.SourceSansBold
+		collideBtn.TextScaled = true
+		collideBtn.Parent = text
+		
 		text.FocusLost:Connect(function()
 			if text.Text == "" then
 				text.Text = tostring(#checkpointsT + 1)
@@ -3008,6 +3024,18 @@ function refreshCheckpointsList()
 		spawnBtn.MouseButton1Click:Connect(function()
 			currentSpawnpoint = checkpoint
 			refreshCheckpointsList()
+		end)
+		
+		collideBtn.MouseButton1Click:Connect(function()
+			if checkpoint.CanCollide then
+				collideBtn.Text = "Collide: OFF"
+				checkpoint.CanCollide = false
+				collideBtn.BackgroundColor3 = Color3.fromRGB(70, 0, 85)
+			else
+				collideBtn.Text = "Collide: ON"
+				checkpoint.CanCollide = true
+				collideBtn.BackgroundColor3 = Color3.fromRGB(220, 0, 255)
+			end
 		end)
 		
 		deleteBtn.MouseButton1Click:Connect(function()
@@ -3060,7 +3088,7 @@ function refreshCheckpointsList()
 			local char = player.Character
 			local hrp = char:FindFirstChild("HumanoidRootPart")
 			if hrp and checkpoint then
-				hrp.CFrame = CFrame.new(Vector3.new(checkpoint.Position.X, checkpoint.Position.Y + 2, checkpoint.Position.Z), Vector3.new(0,0,0))
+				hrp.CFrame = CFrame.new(Vector3.new(checkpoint.Position.X, checkpoint.Position.Y + 3, checkpoint.Position.Z), Vector3.new(0,0,0))
 			end
 		end)
 		
@@ -3081,7 +3109,7 @@ player.CharacterAdded:Connect(function()
 		local char = player.Character
 		local hrp = char:FindFirstChild("HumanoidRootPart")
 		if hrp and currentSpawnpoint then
-			hrp.CFrame = CFrame.new(Vector3.new(currentSpawnpoint.Position.X, currentSpawnpoint.Position.Y + 2, currentSpawnpoint.Position.Z), Vector3.new(0,0,0))
+			hrp.CFrame = CFrame.new(Vector3.new(currentSpawnpoint.Position.X, currentSpawnpoint.Position.Y + 3, currentSpawnpoint.Position.Z), Vector3.new(0,0,0))
 		end
 	end
 end)
