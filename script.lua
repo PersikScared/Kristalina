@@ -3007,7 +3007,7 @@ function refreshCheckpointsList()
 			collideBtn.BackgroundColor3 = Color3.fromRGB(70, 0, 85)
 		end
 		collideBtn.Size = UDim2.new(0, 25, 1, 0)
-		collideBtn.Position = UDim2.new(1, -75, 0, 0)
+		collideBtn.Position = UDim2.new(1, -100, 0, 0)
 		collideBtn.BackgroundColor3 = Color3.fromRGB(220, 0, 255)
 		collideBtn.TextColor3 = Color3.fromRGB(255,255,255)
 		collideBtn.Font = Enum.Font.SourceSansBold
