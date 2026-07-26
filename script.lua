@@ -1476,23 +1476,32 @@ rollUpBtn.MouseButton1Click:Connect(function()
 	setRolledUp(not isRolledUp)
 end)
 
--- WalkSpeed Slider
+local scrollingFrame = Instance.new("ScrollingFrame")
+scrollingFrame.Size = UDim2.new(1, 0, 0, 450)
+scrollingFrame.Position = UDim2.new(0, 5, 0, 50)
+scrollingFrame.BackgroundTransparency = 1
+scrollingFrame.ScrollBarThickness = 12
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+scrollingFrame.Parent = frame
+
+-- WalkSpeed Sliderv  -50
 local walkSpeedLabel = Instance.new("TextLabel")
 walkSpeedLabel.Text = "WalkSpeed"
-walkSpeedLabel.Size = UDim2.new(0, 120, 0, 30)
-walkSpeedLabel.Position = UDim2.new(0, 10, 0, 50)
+walkSpeedLabel.Size = UDim2.new(0, 80, 0, 30)
+walkSpeedLabel.Position = UDim2.new(0, 10, 0, 0)
 walkSpeedLabel.BackgroundTransparency = 1
 walkSpeedLabel.TextColor3 = Color3.fromRGB(255,255,255)
 walkSpeedLabel.Font = Enum.Font.SourceSans
-walkSpeedLabel.TextSize = 20
-walkSpeedLabel.Parent = frame
-
+walkSpeedLabel.TextSize = 18
+walkSpeedLabel.Parent = scrollingFrame
+ 
 local walkSpeedSlider = Instance.new("TextButton")
 walkSpeedSlider.Size = UDim2.new(0, 200, 0, 20)
-walkSpeedSlider.Position = UDim2.new(0, 130, 0, 60)
+walkSpeedSlider.Position = UDim2.new(0, 90, 0, 10)
 walkSpeedSlider.BackgroundColor3 = Color3.fromRGB(80,80,80)
 walkSpeedSlider.Text = ""
-walkSpeedSlider.Parent = frame
+walkSpeedSlider.Parent = scrollingFrame
 
 local walkSpeedKnob = Instance.new("Frame")
 walkSpeedKnob.Size = UDim2.new(0, 10, 0, 20)
@@ -1503,24 +1512,24 @@ walkSpeedKnob.Parent = walkSpeedSlider
 local walkSpeedValueLabel = Instance.new("TextLabel")
 walkSpeedValueLabel.Text = "16"
 walkSpeedValueLabel.Size = UDim2.new(0, 40, 0, 20)
-walkSpeedValueLabel.Position = UDim2.new(0, 340, 0, 60)
+walkSpeedValueLabel.Position = UDim2.new(1, -100, 0, 10)
 walkSpeedValueLabel.BackgroundTransparency = 1
 walkSpeedValueLabel.TextColor3 = Color3.fromRGB(255,255,255)
 walkSpeedValueLabel.Font = Enum.Font.SourceSans
 walkSpeedValueLabel.TextSize = 18
-walkSpeedValueLabel.Parent = frame
+walkSpeedValueLabel.Parent = scrollingFrame
 
 -- WalkSpeed TextBox for direct input
 local walkSpeedTextBox = Instance.new("TextBox")
 walkSpeedTextBox.Size = UDim2.new(0, 40, 0, 20)
-walkSpeedTextBox.Position = UDim2.new(0, 385, 0, 60)
+walkSpeedTextBox.Position = UDim2.new(1, -40, 0, 10)
 walkSpeedTextBox.BackgroundColor3 = Color3.fromRGB(60,60,60)
 walkSpeedTextBox.TextColor3 = Color3.fromRGB(255,255,255)
 walkSpeedTextBox.Font = Enum.Font.SourceSans
 walkSpeedTextBox.TextSize = 18
 walkSpeedTextBox.Text = ""
 walkSpeedTextBox.PlaceholderText = "Set"
-walkSpeedTextBox.Parent = frame
+walkSpeedTextBox.Parent = scrollingFrame
 
 -- Fly Toggle
 local flyToggle = Instance.new("TextButton")
@@ -1531,7 +1540,7 @@ flyToggle.BackgroundColor3 = Color3.fromRGB(80,80,80)
 flyToggle.TextColor3 = Color3.fromRGB(255,255,255)
 flyToggle.Font = Enum.Font.SourceSansBold
 flyToggle.TextSize = 22
-flyToggle.Parent = frame
+flyToggle.Parent = scrollingFrame
 
 -- Noclip Toggle
 local noclipToggle = Instance.new("TextButton")
@@ -1542,25 +1551,25 @@ noclipToggle.BackgroundColor3 = Color3.fromRGB(80,80,80)
 noclipToggle.TextColor3 = Color3.fromRGB(255,255,255)
 noclipToggle.Font = Enum.Font.SourceSansBold
 noclipToggle.TextSize = 22
-noclipToggle.Parent = frame
+noclipToggle.Parent = scrollingFrame
 
 -- Fly Speed Slider
 local flySpeedLabel = Instance.new("TextLabel")
 flySpeedLabel.Text = "Fly Speed"
-flySpeedLabel.Size = UDim2.new(0, 130, 0, 30)
-flySpeedLabel.Position = UDim2.new(0, 10, 0, 150)
+flySpeedLabel.Size = UDim2.new(0, 80, 0, 30)
+flySpeedLabel.Position = UDim2.new(0, 10, 0, 50)
 flySpeedLabel.BackgroundTransparency = 1
 flySpeedLabel.TextColor3 = Color3.fromRGB(255,255,255)
 flySpeedLabel.Font = Enum.Font.SourceSans
-flySpeedLabel.TextSize = 20
-flySpeedLabel.Parent = frame
+flySpeedLabel.TextSize = 18
+flySpeedLabel.Parent = scrollingFrame
 
 local flySpeedSlider = Instance.new("TextButton")
 flySpeedSlider.Size = UDim2.new(0, 200, 0, 20)
-flySpeedSlider.Position = UDim2.new(0, 130, 0, 160)
+flySpeedSlider.Position = UDim2.new(0, 90, 0, 60)
 flySpeedSlider.BackgroundColor3 = Color3.fromRGB(80,80,80)
 flySpeedSlider.Text = ""
-flySpeedSlider.Parent = frame
+flySpeedSlider.Parent = scrollingFrame
 
 local flySpeedKnob = Instance.new("Frame")
 flySpeedKnob.Size = UDim2.new(0, 10, 0, 20)
@@ -1571,156 +1580,156 @@ flySpeedKnob.Parent = flySpeedSlider
 local flySpeedValueLabel = Instance.new("TextLabel")
 flySpeedValueLabel.Text = "50"
 flySpeedValueLabel.Size = UDim2.new(0, 40, 0, 20)
-flySpeedValueLabel.Position = UDim2.new(0, 340, 0, 160)
+flySpeedValueLabel.Position = UDim2.new(1, -100, 0, 60)
 flySpeedValueLabel.BackgroundTransparency = 1
 flySpeedValueLabel.TextColor3 = Color3.fromRGB(255,255,255)
 flySpeedValueLabel.Font = Enum.Font.SourceSans
 flySpeedValueLabel.TextSize = 18
-flySpeedValueLabel.Parent = frame
+flySpeedValueLabel.Parent = scrollingFrame
 
 -- Fly/Noclip Speed TextBox for direct input
 local flySpeedTextBox = Instance.new("TextBox")
 flySpeedTextBox.Size = UDim2.new(0, 40, 0, 20)
-flySpeedTextBox.Position = UDim2.new(0, 385, 0, 160)
+flySpeedTextBox.Position = UDim2.new(1, -40, 0, 60)
 flySpeedTextBox.BackgroundColor3 = Color3.fromRGB(60,60,60)
 flySpeedTextBox.TextColor3 = Color3.fromRGB(255,255,255)
 flySpeedTextBox.Font = Enum.Font.SourceSans
 flySpeedTextBox.TextSize = 18
 flySpeedTextBox.Text = ""
 flySpeedTextBox.PlaceholderText = "Set"
-flySpeedTextBox.Parent = frame
+flySpeedTextBox.Parent = scrollingFrame
 
 -- Fling Players Button
 local flingBtn = Instance.new("TextButton")
 flingBtn.Text = "Fling Players"
 flingBtn.Size = UDim2.new(0, 150, 0, 35)
-flingBtn.Position = UDim2.new(0, 10, 0, 200)
+flingBtn.Position = UDim2.new(0, 10, 0, 150)
 flingBtn.BackgroundColor3 = Color3.fromRGB(80,120,80)
 flingBtn.TextColor3 = Color3.fromRGB(255,255,255)
 flingBtn.Font = Enum.Font.SourceSansBold
 flingBtn.TextSize = 20
-flingBtn.Parent = frame
+flingBtn.Parent = scrollingFrame
 
 -- Teleportation Button
 local teleportBtn = Instance.new("TextButton")
 teleportBtn.Text = "Teleport"
 teleportBtn.Size = UDim2.new(0, 150, 0, 35)
-teleportBtn.Position = UDim2.new(0, 180, 0, 200)
+teleportBtn.Position = UDim2.new(0, 180, 0, 150)
 teleportBtn.BackgroundColor3 = Color3.fromRGB(80,80,120)
 teleportBtn.TextColor3 = Color3.fromRGB(255,255,255)
 teleportBtn.Font = Enum.Font.SourceSansBold
 teleportBtn.TextSize = 20
-teleportBtn.Parent = frame
+teleportBtn.Parent = scrollingFrame
 
 -- ESP Toggle
 local espToggle = Instance.new("TextButton")
 espToggle.Text = "Players ESP: OFF"
 espToggle.Size = UDim2.new(0, 150, 0, 35)
-espToggle.Position = UDim2.new(0, 10, 0, 245)
+espToggle.Position = UDim2.new(0, 10, 0, 195)
 espToggle.BackgroundColor3 = Color3.fromRGB(80,80,120)
 espToggle.TextColor3 = Color3.fromRGB(255,255,255)
 espToggle.Font = Enum.Font.SourceSansBold
 espToggle.TextSize = 20
-espToggle.Parent = frame
+espToggle.Parent = scrollingFrame
 
 -- Godmode Toggle
 local godmodeToggle = Instance.new("TextButton")
 godmodeToggle.Text = "Godmode: OFF"
 godmodeToggle.Size = UDim2.new(0, 150, 0, 35)
-godmodeToggle.Position = UDim2.new(0, 180, 0, 245)
+godmodeToggle.Position = UDim2.new(0, 180, 0, 195)
 godmodeToggle.BackgroundColor3 = Color3.fromRGB(120,80,80)
 godmodeToggle.TextColor3 = Color3.fromRGB(255,255,255)
 godmodeToggle.Font = Enum.Font.SourceSansBold
 godmodeToggle.TextSize = 20
-godmodeToggle.Parent = frame
+godmodeToggle.Parent = scrollingFrame
 
 -- Invisible Toggle
 local invisibleToggle = Instance.new("TextButton")
 invisibleToggle.Text = "Invisible: OFF"
 invisibleToggle.Size = UDim2.new(0, 150, 0, 35)
-invisibleToggle.Position = UDim2.new(0, 10, 0, 290)
+invisibleToggle.Position = UDim2.new(0, 10, 0, 240)
 invisibleToggle.BackgroundColor3 = Color3.fromRGB(80,80,120)
 invisibleToggle.TextColor3 = Color3.fromRGB(255,255,255)
 invisibleToggle.Font = Enum.Font.SourceSansBold
 invisibleToggle.TextSize = 20
-invisibleToggle.Parent = frame
+invisibleToggle.Parent = scrollingFrame
 
 -- Tracer ESP Toggle
 local tracerToggle = Instance.new("TextButton")
 tracerToggle.Text = "Tracers: OFF"
 tracerToggle.Size = UDim2.new(0, 150, 0, 35)
-tracerToggle.Position = UDim2.new(0, 180, 0, 290)
+tracerToggle.Position = UDim2.new(0, 180, 0, 240)
 tracerToggle.BackgroundColor3 = Color3.fromRGB(80,80,120)
 tracerToggle.TextColor3 = Color3.fromRGB(255,255,255)
 tracerToggle.Font = Enum.Font.SourceSansBold
 tracerToggle.TextSize = 20
-tracerToggle.Parent = frame
+tracerToggle.Parent = scrollingFrame
 
 -- Predictor Toggle
 local predictorToggle = Instance.new("TextButton")
 predictorToggle.Text = "Predictor: OFF"
 predictorToggle.Size = UDim2.new(0, 150, 0, 35)
-predictorToggle.Position = UDim2.new(0, 10, 0, 335)
+predictorToggle.Position = UDim2.new(0, 10, 0, 285)
 predictorToggle.BackgroundColor3 = Color3.fromRGB(80,80,120)
 predictorToggle.TextColor3 = Color3.fromRGB(255,255,255)
 predictorToggle.Font = Enum.Font.SourceSansBold
 predictorToggle.TextSize = 20
-predictorToggle.Parent = frame
+predictorToggle.Parent = scrollingFrame
 
 -- Activate Script
 local naoScript = Instance.new("TextButton")
 naoScript.Text = "Naoya Script"
 naoScript.Size = UDim2.new(0, 150, 0, 35)
-naoScript.Position = UDim2.new(0, 180, 0, 335)
+naoScript.Position = UDim2.new(0, 180, 0, 285)
 naoScript.BackgroundColor3 = Color3.fromRGB(80,80,120)
 naoScript.TextColor3 = Color3.fromRGB(255,255,255)
 naoScript.Font = Enum.Font.SourceSansBold
 naoScript.TextSize = 20
-naoScript.Parent = frame
+naoScript.Parent = scrollingFrame
 
 -- Activate Script
 local kazScript = Instance.new("TextButton")
 kazScript.Text = "Kaze Script"
 kazScript.Size = UDim2.new(0, 150, 0, 35)
-kazScript.Position = UDim2.new(0, 10, 0, 380)
+kazScript.Position = UDim2.new(0, 10, 0, 330)
 kazScript.BackgroundColor3 = Color3.fromRGB(80,80,120)
 kazScript.TextColor3 = Color3.fromRGB(255,255,255)
 kazScript.Font = Enum.Font.SourceSansBold
 kazScript.TextSize = 20
-kazScript.Parent = frame
+kazScript.Parent = scrollingFrame
 
 -- Predictor Toggle
 local aimbotToggle = Instance.new("TextButton")
 aimbotToggle.Text = "Aimbot: OFF"
 aimbotToggle.Size = UDim2.new(0, 150, 0, 35)
-aimbotToggle.Position = UDim2.new(0, 180, 0, 380)
+aimbotToggle.Position = UDim2.new(0, 180, 0, 330)
 aimbotToggle.BackgroundColor3 = Color3.fromRGB(80,80,120)
 aimbotToggle.TextColor3 = Color3.fromRGB(255,255,255)
 aimbotToggle.Font = Enum.Font.SourceSansBold
 aimbotToggle.TextSize = 20
-aimbotToggle.Parent = frame
+aimbotToggle.Parent = scrollingFrame
 
 -- Subplace Finder
 local subplaceFinder = Instance.new("TextButton")
 subplaceFinder.Text = "Subplace Finder"
 subplaceFinder.Size = UDim2.new(0, 150, 0, 35)
-subplaceFinder.Position = UDim2.new(0, 10, 0, 425)
+subplaceFinder.Position = UDim2.new(0, 10, 0, 375)
 subplaceFinder.BackgroundColor3 = Color3.fromRGB(80,80,120)
 subplaceFinder.TextColor3 = Color3.fromRGB(255,255,255)
 subplaceFinder.Font = Enum.Font.SourceSansBold
 subplaceFinder.TextSize = 20
-subplaceFinder.Parent = frame
+subplaceFinder.Parent = scrollingFrame
 
 -- Checkpoints
 local checkpoints = Instance.new("TextButton")
 checkpoints.Text = "Checkpoints"
 checkpoints.Size = UDim2.new(0, 150, 0, 35)
-checkpoints.Position = UDim2.new(0, 180, 0, 425)
+checkpoints.Position = UDim2.new(0, 180, 0, 375)
 checkpoints.BackgroundColor3 = Color3.fromRGB(80,80,120)
 checkpoints.TextColor3 = Color3.fromRGB(255,255,255)
 checkpoints.Font = Enum.Font.SourceSansBold
 checkpoints.TextSize = 20
-checkpoints.Parent = frame
+checkpoints.Parent = scrollingFrame
 
 -- Hide Gui
 local hideGui = Instance.new("TextButton")
@@ -1734,7 +1743,7 @@ hideGui.TextSize = 20
 hideGui.Parent = frame
 
 local signature = Instance.new("TextLabel")
-signature.Text = "KristaliK v2.1"
+signature.Text = "KristaliK v2.2"
 signature.TextScaled = true
 signature.RichText = true
 signature.Size = UDim2.new(1, 0, 0, 20)
@@ -1841,7 +1850,7 @@ hideGui.MouseButton1Down:Connect(function()
 	if healthgui then
 		healthgui.Enabled = not guiEnabled
 	end
-	
+
 	if guiEnabled then
 		hideGui.Text = "Toggle HGui: ON"
 		hideGui.BackgroundColor3 = Color3.fromRGB(0, 120,120)
@@ -1900,7 +1909,7 @@ function enableFly()
 	bodyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
 	bodyVel.Velocity = Vector3.new(0,0,0)
 	bodyVel.Parent = humanoidRootPart
-	
+
 
 	ContextActionService:BindAction("FlyDown", flyDown, true)
 	ContextActionService:BindAction("FlyUp", flyUp, true)
@@ -1911,13 +1920,13 @@ function enableFly()
 
 	flyConnection = game:GetService("RunService").RenderStepped:Connect(function()
 		local moveVec = Vector3.new(0,0,0)
-		
+
 		--TODO: Make mobile friendly
-		
+
 		--MOBILE CONTROLS
 		if game:GetService("UserInputService"):GetLastInputType() == Enum.UserInputType.Touch then
 			local move = humanoid.MoveDirection
-			
+
 			local total = Vector3.new(move.X, flyDirectionY, move.Z)
 			if total.Magnitude > 0 then
 				moveVec = total.Unit
@@ -1925,29 +1934,29 @@ function enableFly()
 				moveVec = Vector3.new(0, 0, 0)
 			end
 		end
-		
+
 		if game:GetService("UserInputService").KeyboardEnabled then
-				--KEYBOARD CONTROLS
-				if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.W) then
-					moveVec = moveVec + workspace.CurrentCamera.CFrame.LookVector
-				end
-				if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.S) then
-					moveVec = moveVec - workspace.CurrentCamera.CFrame.LookVector
-				end
-				if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.A) then
-					moveVec = moveVec - workspace.CurrentCamera.CFrame.RightVector
-				end
-				if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.D) then
-					moveVec = moveVec + workspace.CurrentCamera.CFrame.RightVector
-				end
-				if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Space) then
-					moveVec = moveVec + Vector3.new(0,1,0)
-				end
-				if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.LeftControl) then
-					moveVec = moveVec - Vector3.new(0,1,0)
-				end
+			--KEYBOARD CONTROLS
+			if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.W) then
+				moveVec = moveVec + workspace.CurrentCamera.CFrame.LookVector
+			end
+			if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.S) then
+				moveVec = moveVec - workspace.CurrentCamera.CFrame.LookVector
+			end
+			if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.A) then
+				moveVec = moveVec - workspace.CurrentCamera.CFrame.RightVector
+			end
+			if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.D) then
+				moveVec = moveVec + workspace.CurrentCamera.CFrame.RightVector
+			end
+			if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Space) then
+				moveVec = moveVec + Vector3.new(0,1,0)
+			end
+			if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.LeftControl) then
+				moveVec = moveVec - Vector3.new(0,1,0)
+			end
 		end
-		
+
 		if moveVec.Magnitude > 0 then
 			bodyVel.Velocity = moveVec.Unit * currentFlySpeed
 		else
@@ -2932,7 +2941,7 @@ function refreshCheckpointsList()
 			v:Destroy()
 		end
 	end
-	
+
 	local y = 0
 	for k, checkpoint in checkpointsT do
 		local text = Instance.new("TextBox")
@@ -2955,10 +2964,10 @@ function refreshCheckpointsList()
 		textC.Font = Enum.Font.SourceSans
 		textC.TextScaled = true
 		textC.PlaceholderText = "RGB Red (255,0,0)"
-	
+
 		textC.TextXAlignment = Enum.TextXAlignment.Left
 		textC.Parent = text
-		
+
 		local tpBtn = Instance.new("TextButton")
 		tpBtn.Text = "Teleport"
 		tpBtn.Size = UDim2.new(0, 25, 1, 0)
@@ -2968,7 +2977,7 @@ function refreshCheckpointsList()
 		tpBtn.Font = Enum.Font.SourceSansBold
 		tpBtn.TextScaled = true
 		tpBtn.Parent = text
-		
+
 		local spawnBtn = Instance.new("TextButton")
 		spawnBtn.Text = "Set Spawnpoint"
 		spawnBtn.Size = UDim2.new(0, 25, 1, 0)
@@ -2979,12 +2988,12 @@ function refreshCheckpointsList()
 		spawnBtn.TextScaled = true
 		spawnBtn.Active = true
 		spawnBtn.Parent = text
-		
+
 		if currentSpawnpoint == checkpoint then
 			spawnBtn.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
 			spawnBtn.Active = false
 		end
-		
+
 		local deleteBtn = Instance.new("TextButton")
 		deleteBtn.Text = "Delete"
 		deleteBtn.Size = UDim2.new(0, 25, 1, 0)
@@ -2994,7 +3003,7 @@ function refreshCheckpointsList()
 		deleteBtn.Font = Enum.Font.SourceSansBold
 		deleteBtn.TextScaled = true
 		deleteBtn.Parent = text
-		
+
 		local collideBtn = Instance.new("TextButton")
 		if checkpoint.CanCollide then
 			collideBtn.Text = "Collide: ON"
@@ -3010,19 +3019,19 @@ function refreshCheckpointsList()
 		collideBtn.Font = Enum.Font.SourceSansBold
 		collideBtn.TextScaled = true
 		collideBtn.Parent = text
-		
+
 		text.FocusLost:Connect(function()
 			if text.Text == "" then
 				text.Text = tostring(#checkpointsT + 1)
 			end
 			checkpoint.Name = text.Text
 		end)
-		
+
 		spawnBtn.MouseButton1Click:Connect(function()
 			currentSpawnpoint = checkpoint
 			refreshCheckpointsList()
 		end)
-		
+
 		collideBtn.MouseButton1Click:Connect(function()
 			if checkpoint.CanCollide then
 				collideBtn.Text = "Collide: OFF"
@@ -3034,7 +3043,7 @@ function refreshCheckpointsList()
 				collideBtn.BackgroundColor3 = Color3.fromRGB(220, 0, 255)
 			end
 		end)
-		
+
 		deleteBtn.MouseButton1Click:Connect(function()
 			local ind = table.find(checkpointsT, checkpoint)
 			if ind then
@@ -3046,7 +3055,7 @@ function refreshCheckpointsList()
 				refreshCheckpointsList()
 			end
 		end)
-		
+
 		textC.FocusLost:Connect(function()
 			pcall(function()
 				local color = textC.Text
@@ -3062,7 +3071,7 @@ function refreshCheckpointsList()
 			end)
 
 		end)
-		
+
 		--detect textbox changes
 		textC.Changed:Connect(function(property)
 			if property == "Text" then
@@ -3080,10 +3089,10 @@ function refreshCheckpointsList()
 						text.TextColor3 = Color3.fromRGB(r, g, b)
 					end
 				end)
-				
+
 			end
 		end)
-		
+
 		tpBtn.MouseButton1Click:Connect(function()
 			local char = player.Character
 			local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -3091,9 +3100,9 @@ function refreshCheckpointsList()
 				hrp.CFrame = CFrame.new(Vector3.new(checkpoint.Position.X, checkpoint.Position.Y + 3, checkpoint.Position.Z), Vector3.new(0,0,0))
 			end
 		end)
-		
+
 		y = y + 50
-		
+
 	end
 	checkpointsList.CanvasSize = UDim2.new(0,0,0,y)
 end
@@ -3139,8 +3148,31 @@ end
 
 healthscript()
 
+local loopCount = 0
+
 while true do
 	updatePing()
 	task.wait(1)
+	loopCount += 1
+	if loopCount == 10 then
+		task.spawn(function()
+			if espEnabled then
+				disableESP()
+				task.wait(1)
+				enableESP()
+			end
+			if tracerEnabled then
+				disableTracers()
+				task.wait(1)
+				enableTracers()
+			end
+			if predictorEnabled then
+				disablePredictor()
+				task.wait(1)
+				enablePredictor()
+			end
+		end)
+		
+		loopCount = 0
+	end
 end
-
