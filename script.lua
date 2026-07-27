@@ -2371,7 +2371,7 @@ buildZone.MouseButton1Click:Connect(function()
 		BuildZoneEnabled = true
 	else
 		BuildZoneEnabled = false
-		buildZone.Text = "Build Zone: ON"
+		buildZone.Text = "Build Zone: OFF"
 		buildZone.BackgroundColor3 = Color3.fromRGB(80, 80, 120)
 		disableBuildZone()
 	end
