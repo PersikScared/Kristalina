@@ -2354,7 +2354,11 @@ function disableBuildZone()
 	-- teleport to checkpoint
 	
 	if buildCheckpoint then
-		player.Character.HumanoidRootPart.CFrame = buildCheckpoint.CFrame * CFrame.new(0, humanoid.HipHeight + 2, 0)
+		player.Character.HumanoidRootPart.CFrame = CFrame.new(Vector3.new(buildCheckpoint.Position.X, buildCheckpoint.Position.Y + humanoid.HipHeight + 0.5, buildCheckpoint.Position.Z))
+		task.wait(0.25)
+		player.Character.HumanoidRootPart.Anchored = true
+		task.wait(.5)
+		player.Character.HumanoidRootPart.Anchored = false
 	end
 	
 	for i, Tool in hopperbins do
