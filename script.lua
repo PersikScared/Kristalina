@@ -1,3 +1,7 @@
+--[[
+Kristalina Hub, 2026. All rights reversed
+]]
+
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -231,7 +235,7 @@ function healthscript()
 
 	-- Helper to create and play tweens quickly
 	local function tween(obj, ti, props)
-		local t = TweenService:Create(obj, ti, props) -- Build tween
+		local t = TweenService:Create(obj, ti, props) -- Buildbuyu tween
 		t:Play() -- Start tween
 		return t -- Return tween for Completed:Wait if needed
 	end
@@ -498,6 +502,11 @@ function healthscript()
 	end)
 
 end
+
+
+local foldercheckpoints = Instance.new("Folder")
+foldercheckpoints.Name = "CheckpointsKRS"
+foldercheckpoints.Parent = workspace
 
 function bikerscript()
 	--,eta
@@ -1477,7 +1486,7 @@ rollUpBtn.MouseButton1Click:Connect(function()
 end)
 
 local scrollingFrame = Instance.new("ScrollingFrame")
-scrollingFrame.Size = UDim2.new(1, 0, 0, 450)
+scrollingFrame.Size = UDim2.new(1, 0, 0, 410)
 scrollingFrame.Position = UDim2.new(0, 5, 0, 50)
 scrollingFrame.BackgroundTransparency = 1
 scrollingFrame.ScrollBarThickness = 12
@@ -1731,6 +1740,18 @@ checkpoints.Font = Enum.Font.SourceSansBold
 checkpoints.TextSize = 20
 checkpoints.Parent = scrollingFrame
 
+-- Build Zone
+local buildZone = Instance.new("TextButton")
+buildZone.Text = "Build Zone: OFF"
+buildZone.Size = UDim2.new(0, 150, 0, 35)
+buildZone.Position = UDim2.new(0, 10, 0, 420)
+buildZone.BackgroundColor3 = Color3.fromRGB(80,80,120) -- yah feature zone build karte hoga
+buildZone.TextColor3 = Color3.fromRGB(255,255,255)
+buildZone.Font = Enum.Font.SourceSansBold
+buildZone.TextSize = 20
+buildZone.Parent = scrollingFrame
+
+
 -- Hide Gui
 local hideGui = Instance.new("TextButton")
 hideGui.Text = "Toggle HGui: ON"
@@ -1743,7 +1764,7 @@ hideGui.TextSize = 20
 hideGui.Parent = frame
 
 local signature = Instance.new("TextLabel")
-signature.Text = "KristaliK v2.2"
+signature.Text = "KristaliK v2.3" --  signature version aur owner naam ke liye (kr)
 signature.TextScaled = true
 signature.RichText = true
 signature.Size = UDim2.new(1, 0, 0, 20)
@@ -1754,6 +1775,7 @@ signature.Parent = frame
 signature.Font = Enum.Font.FredokaOne
 
 screenGui.Parent = player.PlayerGui
+
 
 -- Logic
 local guiEnabled = false
@@ -1870,7 +1892,7 @@ walkSpeedTextBox.FocusLost:Connect(function(enterPressed)
 	end
 end)
 
--- Fly/Noclip Speed TextBox logic
+-- Fly/Noclip Speed TextBox logic (Kap16arka)
 flySpeedTextBox.FocusLost:Connect(function(enterPressed)
 	local text = flySpeedTextBox.Text
 	local num = tonumber(text)
@@ -2084,7 +2106,7 @@ teleportGui.BackgroundColor3 = Color3.fromRGB(30,30,60)
 teleportGui.Visible = false
 teleportGui.Parent = screenGui
 teleportGui.Active = true
-teleportGui.Draggable = true
+teleportGui.Draggable = true -- yeh property padavanat hai
 
 local teleportTitle = Instance.new("TextLabel")
 teleportTitle.Text = "Teleport to Player"
@@ -2116,6 +2138,34 @@ playerList.BackgroundTransparency = 1
 playerList.CanvasSize = UDim2.new(0,0,0,0)
 playerList.ScrollBarThickness = 6
 playerList.Parent = teleportGui
+
+local rollTeleport = Instance.new("TextButton")
+rollTeleport.Text = '▲'
+rollTeleport.Size = UDim2.new(0, 30, 0, 30)
+rollTeleport.Position = UDim2.new(1, -60, 0, 0)
+rollTeleport.BackgroundColor3 = Color3.fromRGB(40, 120, 40)
+rollTeleport.TextColor3 = Color3.fromRGB(255,255,255)
+rollTeleport.Font = Enum.Font.SourceSansBold
+rollTeleport.TextSize = 22
+rollTeleport.Parent = teleportGui
+
+local rolledTeleport = false
+
+rollTeleport.MouseButton1Click:Connect(function()
+	rolledTeleport = not rolledTeleport
+	if rolledTeleport then
+		rollTeleport.Text = '▼'
+
+		playerList.Visible = false
+		teleportGui.Size = UDim2.new(0, 220, 0, 30)
+	else
+		rollTeleport.Text = '▲'
+		playerList.Visible = true
+		teleportGui.Size = UDim2.new(0, 220, 0, 180)
+		refreshPlayerList()
+	end
+end)
+
 
 function refreshPlayerList()
 	for k, v in playerList:GetChildren() do
@@ -2240,6 +2290,93 @@ function enableESP()
 		end
 	end
 end
+
+function randomString() -- encryption ke liye
+	local length = math.random(14,25)
+	local array = {}
+	for i = 1, length do
+		array[i] = string.char(math.random(32, 126))
+	end
+	return table.concat(array)
+end
+
+-- Build Zone (Nirman kshestra)
+local buildCheckpoint = nil
+
+local BuildZoneEnabled = false
+local hopperbins = {}
+function enableBuildZone()
+	--create checkpoint
+	local newCheckpoint = Instance.new("SpawnLocation")
+	newCheckpoint.Size = Vector3.new(0.5, 5, 5)
+	newCheckpoint.Name = "Checkpoint" .. #checkpointsT + 1
+	newCheckpoint.Parent = foldercheckpoints
+	newCheckpoint.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, -humanoid.HipHeight - 0.5, 0)
+	newCheckpoint.Orientation = Vector3.new(0,0,-90)
+	newCheckpoint.Material = Enum.Material.Neon
+	newCheckpoint.BrickColor = BrickColor.new("Really red")
+	newCheckpoint.Shape = Enum.PartType.Cylinder
+
+	table.insert(checkpointsT, newCheckpoint)
+	newCheckpoint.CanCollide = true
+	newCheckpoint.Anchored = true --kill kaze
+	
+	buildCheckpoint = newCheckpoint
+	refreshCheckpointsList()
+	
+	task.wait()
+	
+	local buildZoneN = Instance.new("Part")
+
+	buildZoneN.Parent = workspace
+	buildZoneN.Size = Vector3.new(125,3,125)
+	buildZoneN.Anchored = true
+	buildZoneN.Position = Vector3.new(5267,100000,6752)
+	buildZoneN.Transparency = 0.5
+	buildZoneN.Color = Color3.fromRGB(255,0,0)
+	buildZoneN.CanCollide = true
+	buildZoneN.CanTouch = false -- suraksha ke liye ise band kiya gaya hai.
+
+	player.Character.HumanoidRootPart.CFrame = buildZoneN.CFrame * CFrame.new(0, humanoid.HipHeight + buildZoneN.Size.Y / 2, 0)
+
+	-- hopperbin ke upyog karna
+	for i = 1, 4 do
+		local Tool = Instance.new("HopperBin")
+		Tool.BinType = i
+		Tool.Name = randomString()
+		Tool.Parent = player:FindFirstChildWhichIsA("Backpack")
+		
+		table.insert(hopperbins, Tool)
+	end
+end
+
+function disableBuildZone()
+	-- teleport to checkpoint
+	
+	if buildCheckpoint then
+		player.Character.HumanoidRootPart.CFrame = buildCheckpoint.CFrame * CFrame.new(0, humanoid.HipHeight + 2, 0)
+	end
+	
+	for i, Tool in hopperbins do
+		Tool:Destroy()
+	end
+	hopperbins = {}
+end
+
+buildZone.MouseButton1Click:Connect(function()
+	if not BuildZoneEnabled then
+		enableBuildZone()
+		buildZone.Text = "Build Zone: ON"
+		buildZone.BackgroundColor3 = Color3.fromRGB(0,120,120)
+		BuildZoneEnabled = true
+	else
+		BuildZoneEnabled = false
+		buildZone.Text = "Build Zone: ON"
+		buildZone.BackgroundColor3 = Color3.fromRGB(80, 80, 120)
+		disableBuildZone()
+	end
+end)
+
 -- auto player tracker : left and join
 
 Players.PlayerAdded:Connect(function(plr)
@@ -2810,10 +2947,11 @@ end)
 
 local subplaceList = Instance.new("ScrollingFrame")
 subplaceList.Size = UDim2.new(1, -20, 1, -40)
-subplaceList.Position = UDim2.new(0, 10, 0, 35)
+subplaceList.Position = UDim2.new(0, 10, 0, 25)
 subplaceList.BackgroundTransparency = 1
 subplaceList.CanvasSize = UDim2.new(0,0,0,0)
-subplaceList.ScrollBarThickness = 6
+subplaceList.ScrollBarThickness = 4
+subplaceList.ClipsDescendants = true
 subplaceList.Parent = subplaceGui
 
 function refreshSubplaceList()
@@ -2872,12 +3010,14 @@ checkpointsGui.Draggable = true
 
 local checkpointTitle = Instance.new("TextLabel")
 checkpointTitle.Text = "Create checkpoints"
-checkpointTitle.Size = UDim2.new(1, -30, 0, 30)
+checkpointTitle.Size = UDim2.new(1, -60, 0, 30)
 checkpointTitle.BackgroundTransparency = 1
 checkpointTitle.TextColor3 = Color3.fromRGB(255,255,255)
 checkpointTitle.Font = Enum.Font.SourceSansBold
 checkpointTitle.TextSize = 22
 checkpointTitle.Parent = checkpointsGui
+
+
 
 local closeCheckpointsBtn = Instance.new("TextButton")
 closeCheckpointsBtn.Text = "X"
@@ -2903,7 +3043,7 @@ checkpointsList.Parent = checkpointsGui
 
 local addBtn = Instance.new("TextButton")
 addBtn.Text = "➕ Add"
-addBtn.Size = UDim2.new(1, 0, 0, 30)
+addBtn.Size = UDim2.new(.8, 0, 0, 30)
 addBtn.Position = UDim2.new(0, 0, 1, -30)
 addBtn.BackgroundColor3 = Color3.fromRGB(40, 120, 40)
 addBtn.TextColor3 = Color3.fromRGB(255,255,255)
@@ -2911,9 +3051,51 @@ addBtn.Font = Enum.Font.SourceSansBold
 addBtn.TextScaled = true
 addBtn.Parent = checkpointsGui
 
-local foldercheckpoints = Instance.new("Folder")
-foldercheckpoints.Name = "CheckpointsKRS"
-foldercheckpoints.Parent = workspace
+local clearSpawnpoint = Instance.new("TextButton")
+clearSpawnpoint.Text = "Clear Spawnpoint"
+clearSpawnpoint.Size = UDim2.new(.2, 0, 0, 30)
+clearSpawnpoint.Position = UDim2.new(0.8, 0, 1, -30)
+clearSpawnpoint.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+clearSpawnpoint.TextColor3 = Color3.fromRGB(255,255,255)
+clearSpawnpoint.Font = Enum.Font.SourceSansBold
+clearSpawnpoint.TextScaled = true
+clearSpawnpoint.Parent = checkpointsGui
+
+local rollCheckpoints = Instance.new("TextButton")
+rollCheckpoints.Text = '▲'
+rollCheckpoints.Size = UDim2.new(0, 30, 0, 30)
+rollCheckpoints.Position = UDim2.new(1, -60, 0, 0)
+rollCheckpoints.BackgroundColor3 = Color3.fromRGB(40, 120, 40)
+rollCheckpoints.TextColor3 = Color3.fromRGB(255,255,255)
+rollCheckpoints.Font = Enum.Font.SourceSansBold
+rollCheckpoints.TextSize = 22
+rollCheckpoints.Parent = checkpointsGui
+
+local rolledCheckpoints = false
+
+rollCheckpoints.MouseButton1Click:Connect(function()
+	rolledCheckpoints = not rolledCheckpoints
+	if rolledCheckpoints then
+		rollCheckpoints.Text = '▼'
+
+		checkpointsList.Visible = false
+		clearSpawnpoint.Visible = false
+		addBtn.Visible = false
+		checkpointsGui.Size = UDim2.new(0, 220, 0, 30)
+	else
+		rollCheckpoints.Text = '▲'
+		checkpointsList.Visible = true
+		clearSpawnpoint.Visible = true
+		addBtn.Visible = true
+		checkpointsGui.Size = UDim2.new(0, 220, 0, 180)
+	end
+end)
+
+
+clearSpawnpoint.MouseButton1Click:Connect(function()
+	currentSpawnpoint = nil
+	refreshCheckpointsList()
+end)
 
 addBtn.MouseButton1Click:Connect(function()
 	local newCheckpoint = Instance.new("SpawnLocation")
@@ -3049,6 +3231,9 @@ function refreshCheckpointsList()
 			if ind then
 				if checkpoint == currentSpawnpoint then
 					currentSpawnpoint = nil
+				end
+				if checkpoint == buildCheckpoint then
+					buildCheckpoint = nil
 				end
 				table.remove(checkpointsT, ind)
 				checkpoint:Destroy()
