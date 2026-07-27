@@ -3287,6 +3287,10 @@ function refreshCheckpointsList()
 			local hrp = char:FindFirstChild("HumanoidRootPart")
 			if hrp and checkpoint then
 				hrp.CFrame = CFrame.new(Vector3.new(checkpoint.Position.X, checkpoint.Position.Y + 3, checkpoint.Position.Z), Vector3.new(0,0,0))
+				task.wait(0.25)
+				hrp.Anchored = true
+				task.wait(0.25)
+				hrp.Anchored = false	
 			end
 		end)
 
@@ -3308,6 +3312,10 @@ player.CharacterAdded:Connect(function()
 		local hrp = char:FindFirstChild("HumanoidRootPart")
 		if hrp and currentSpawnpoint then
 			hrp.CFrame = CFrame.new(Vector3.new(currentSpawnpoint.Position.X, currentSpawnpoint.Position.Y + 3, currentSpawnpoint.Position.Z), Vector3.new(0,0,0))
+			task.wait(0.25)
+			hrp.Anchored = true
+			task.wait(0.25)
+			hrp.Anchored = false
 		end
 	end
 end)
