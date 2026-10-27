@@ -1480,6 +1480,7 @@ function alliscript()
 
 	-- ================= RAYCAST =================
 
+
 	local function raycastGround(position)
 		if not getCharacter() then
 			return nil
@@ -1489,14 +1490,18 @@ function alliscript()
 		params.FilterType = Enum.RaycastFilterType.Exclude
 		params.FilterDescendantsInstances = {character}
 
-		-- Start from the character's current height (not +12 above
-		-- the destination) so the ray doesn't hit the tops of walls
-		-- that are above floor level.
-		local originY = hrp.Position.Y + 5
+		local rootHeight = humanoid.HipHeight + hrp.Size.Y / 2
+
+		-- Start near the character's feet, not high above the destination.
+		local origin = Vector3.new(
+			position.X,
+			position.Y - rootHeight + 2,
+			position.Z
+		)
 
 		return workspace:Raycast(
-			Vector3.new(position.X, originY, position.Z),
-			Vector3.new(0, -100, 0),
+			origin,
+			Vector3.new(0, -8, 0),
 			params
 		)
 	end
@@ -1509,13 +1514,19 @@ function alliscript()
 		local result = raycastGround(position)
 
 		if result then
-			local height = humanoid.HipHeight + hrp.Size.Y / 2
+			local rootHeight = humanoid.HipHeight + hrp.Size.Y / 2
 
-			return result.Position + Vector3.new(0, height, 0)
+			return Vector3.new(
+				position.X,
+				result.Position.Y + rootHeight,
+				position.Z
+			)
 		end
 
+		-- If no floor is found, don't guess a new height.
 		return position
 	end
+
 
 	local function validatePath(originPos, targetPos, filterInstances)
 		local params = RaycastParams.new()
@@ -1940,20 +1951,27 @@ function alliscript()
 
 				-- Keep the proxy at ground height (start from the proxy's
 				-- current Y, not +12 above, to avoid hitting wall tops).
+
+				local rootHeight = humanoid.HipHeight + hrp.Size.Y / 2
+
 				local result = workspace:Raycast(
-					Vector3.new(nextPosition.X, proxy.Position.Y + 5, nextPosition.Z),
-					Vector3.new(0, -100, 0),
+					Vector3.new(
+						nextPosition.X,
+						nextPosition.Y - rootHeight + 2,
+						nextPosition.Z
+					),
+					Vector3.new(0, -8, 0),
 					params
 				)
 
 				if result then
 					nextPosition = Vector3.new(
 						nextPosition.X,
-						result.Position.Y + humanoid.HipHeight
-							+ hrp.Size.Y / 2,
+						result.Position.Y + rootHeight,
 						nextPosition.Z
 					)
 				end
+
 
 				if moveDirection.Magnitude > 0.05 then
 					proxy.CFrame = CFrame.lookAt(
