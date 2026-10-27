@@ -1361,6 +1361,820 @@ function kazescript()
 	bind("M_Action", handleM, Enum.KeyCode.M, "Toggle GUI", UDim2.new(1, -130, 0, -255))
 end
 
+function alliscript()
+	-- ================= SERVICES =================
+	local Players = game:GetService("Players")
+	local UserInputService = game:GetService("UserInputService")
+	local ContextActionService = game:GetService("ContextActionService")
+	local RunService = game:GetService("RunService")
+	local StarterGui = game:GetService("StarterGui")
+	local Debris = game:GetService("Debris")
+
+	local player = Players.LocalPlayer
+	local playerGui = player:WaitForChild("PlayerGui")
+
+	-- ================= STATE =================
+	local scriptRunning = true
+	local isBusy = false
+	local ultActive = false
+
+	local character
+	local humanoid
+	local hrp
+
+	local characterConnections = {}
+	local activeGui
+
+	-- ================= SETTINGS =================
+	local SETTINGS = {
+		DASH_DISTANCE = 14,
+		DASH_TIME = 0.14,
+
+		JUMP_ATTACK_DISTANCE = 30,
+		JUMP_ATTACK_TIME = 0.3,
+		JUMP_HEIGHT = 25,
+
+		ULT_HIDE_DEPTH = 12,
+		ULT_HIDE_TIME = 5,
+
+		DASH_COOLDOWN = 0.35,
+		JUMP_COOLDOWN = 0.7,
+		ULT_COOLDOWN = 10,
+	}
+
+	-- ================= YOUR SCRIPT =================
+	-- Put the remaining Alli Script code here:
+	-- 1. Character helpers
+	-- 2. Raycasting
+	-- 3. Normal dash
+	-- 4. Jump attack
+	-- 5. Ultimate hide
+	-- 6. GUI creation
+	-- 7. Input bindings
+	-- 8. Character respawn handling
+
+	-- Keep all helper functions and variables inside
+	-- alliscript() so they remain local to this script.
+	
+	-- ================= STATE =================
+
+	local scriptRunning = true
+	local isBusy = false
+	local ultActive = false
+
+	local character
+	local humanoid
+	local hrp
+
+	local characterConnections = {}
+	local activeGui
+	local actionConnections = {}
+
+	local function disconnectCharacterConnections()
+		for _, connection in ipairs(characterConnections) do
+			connection:Disconnect()
+		end
+
+		table.clear(characterConnections)
+	end
+
+	local function getCharacter()
+		character = player.Character
+
+		if not character then
+			return false
+		end
+
+		humanoid = character:FindFirstChildOfClass("Humanoid")
+		hrp = character:FindFirstChild("HumanoidRootPart")
+
+		return humanoid ~= nil and hrp ~= nil
+			and humanoid.Health > 0
+	end
+
+	local function notify(title, message)
+		pcall(function()
+			StarterGui:SetCore("SendNotification", {
+				Title = title,
+				Text = message,
+				Duration = 3,
+			})
+		end)
+	end
+
+	local function playSound(soundId)
+		if not getCharacter() then
+			return
+		end
+
+		local sound = Instance.new("Sound")
+		sound.SoundId = soundId
+		sound.Volume = 2
+		sound.Parent = hrp
+
+		sound:Play()
+		Debris:AddItem(sound, 3)
+	end
+
+	-- ================= RAYCAST =================
+
+	local function raycastGround(position)
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		params.FilterDescendantsInstances = {character}
+
+		return workspace:Raycast(
+			position + Vector3.new(0, 12, 0),
+			Vector3.new(0, -100, 0),
+			params
+		)
+	end
+
+	local function getGroundedPosition(position)
+		if not getCharacter() then
+			return position
+		end
+
+		local result = raycastGround(position)
+
+		if result then
+			local height = humanoid.HipHeight + hrp.Size.Y / 2
+
+			return result.Position + Vector3.new(0, height, 0)
+		end
+
+		return position
+	end
+
+	-- ================= MOVEMENT =================
+
+	local function glitchAppear(duration)
+		if not getCharacter() then
+			return
+		end
+
+		local oldCFrame = hrp.CFrame
+
+		-- Temporarily reveal the character at the proxy position.
+		if activeGui then
+			-- No GUI changes needed; this is a character effect.
+		end
+
+		local parts = {}
+
+		for _, obj in ipairs(character:GetDescendants()) do
+			if obj:IsA("BasePart") then
+				parts[obj] = obj.LocalTransparencyModifier
+				obj.LocalTransparencyModifier = 0
+			end
+		end
+
+		-- Flash the character at the proxy's current position.
+		if proxy and proxy.Parent then
+			hrp.CFrame = proxy.CFrame
+				* CFrame.new(
+					0,
+					humanoid.HipHeight + hrp.Size.Y / 2,
+					0
+				)
+		end
+
+		task.wait(duration)
+
+		-- Hide the character underground again.
+		if getCharacter() and scriptRunning then
+			hrp.CFrame = oldCFrame
+		end
+
+		for part, transparency in pairs(parts) do
+			if part.Parent then
+				part.LocalTransparencyModifier = transparency
+			end
+		end
+	end
+	
+
+	local function moveCharacter(targetCFrame, duration, arcHeight)
+		if not getCharacter() or isBusy or ultActive then
+			return false
+		end
+
+		isBusy = true
+
+		local startCFrame = hrp.CFrame
+		local startPosition = startCFrame.Position
+		local startTime = os.clock()
+
+		duration = math.max(duration, 0.03)
+		arcHeight = arcHeight or 0
+
+		local success = true
+
+		while scriptRunning do
+			if not getCharacter() then
+				success = false
+				break
+			end
+
+			local alpha = math.clamp(
+				(os.clock() - startTime) / duration,
+				0,
+				1
+			)
+
+			local position = startPosition:Lerp(
+				targetCFrame.Position,
+				alpha
+			)
+
+			-- Smooth jumping arc.
+			if arcHeight > 0 then
+				position += Vector3.new(
+					0,
+					math.sin(alpha * math.pi) * arcHeight,
+					0
+				)
+			end
+
+			local facing = targetCFrame.LookVector
+
+			hrp.CFrame = CFrame.lookAt(
+				position,
+				position + facing
+			)
+
+			if alpha >= 1 then
+				break
+			end
+
+			RunService.Heartbeat:Wait()
+		end
+
+		if getCharacter() and success and scriptRunning then
+			hrp.CFrame = targetCFrame
+		end
+
+		isBusy = false
+
+		return success
+	end
+
+	-- ================= Q: NORMAL DASH =================
+
+	local function normalDash()
+		if not scriptRunning or isBusy or ultActive then
+			return
+		end
+
+		if not getCharacter() then
+			return
+		end
+
+		isBusy = true
+
+		playSound("rbxassetid://106087434186414")
+
+		-- Longer and faster than the original Kaze dash.
+		local direction = hrp.CFrame.LookVector
+		local destination = hrp.Position
+			+ direction * SETTINGS.DASH_DISTANCE
+
+		local groundedPosition = getGroundedPosition(destination)
+
+		local targetCFrame = CFrame.lookAt(
+			groundedPosition,
+			groundedPosition + direction
+		)
+
+		local tool = character:FindFirstChildOfClass("Tool")
+
+		if tool then
+			tool:Activate()
+		end
+
+		-- Release the busy flag before calling the movement helper.
+		isBusy = false
+
+		moveCharacter(
+			targetCFrame,
+			SETTINGS.DASH_TIME,
+			0
+		)
+
+		task.wait(SETTINGS.DASH_COOLDOWN)
+	end
+
+	-- ================= E: JUMP ATTACK =================
+
+	local function jumpAttack()
+		if not scriptRunning or isBusy or ultActive then
+			return
+		end
+
+		if not getCharacter() then
+			return
+		end
+
+		local camera = workspace.CurrentCamera
+
+		if not camera then
+			return
+		end
+
+		local mousePosition = UserInputService:GetMouseLocation()
+
+		local screenRay = camera:ViewportPointToRay(
+			mousePosition.X,
+			mousePosition.Y
+		)
+
+		local tool = character:FindFirstChildOfClass("Tool")
+
+		if tool then
+			tool:Activate()
+		end
+		
+		
+
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		params.FilterDescendantsInstances = {character}
+
+		local hit = workspace:Raycast(
+			screenRay.Origin,
+			screenRay.Direction * 500,
+			params
+		)
+
+		local targetPosition
+
+		if hit then
+			targetPosition = hit.Position
+		else
+			targetPosition = screenRay.Origin
+				+ screenRay.Direction * SETTINGS.JUMP_ATTACK_DISTANCE
+		end
+
+		local origin = hrp.Position
+		local offset = targetPosition - origin
+
+		-- Keep the attack within a reasonable range.
+		if offset.Magnitude > SETTINGS.JUMP_ATTACK_DISTANCE then
+			targetPosition = origin
+				+ offset.Unit * SETTINGS.JUMP_ATTACK_DISTANCE
+		end
+
+		-- Land near the target when ground is available.
+		local landingPosition = getGroundedPosition(targetPosition)
+
+		local direction = landingPosition - origin
+
+		if direction.Magnitude < 0.1 then
+			direction = hrp.CFrame.LookVector
+		else
+			direction = direction.Unit
+		end
+
+		local targetCFrame = CFrame.lookAt(
+			landingPosition,
+			landingPosition + direction
+		)
+
+		playSound("rbxassetid://80056904520798")
+
+		moveCharacter(
+			targetCFrame,
+			SETTINGS.JUMP_ATTACK_TIME,
+			SETTINGS.JUMP_HEIGHT
+		)
+
+		task.wait(SETTINGS.JUMP_COOLDOWN)
+	end
+
+	-- ================= R: ULTIMATE HIDE =================
+
+	local function ultimateHide()
+		if not scriptRunning or isBusy or ultActive then
+			return
+		end
+
+		if not getCharacter() then
+			return
+		end
+
+		isBusy = true
+		ultActive = true
+
+		local camera = workspace.CurrentCamera
+		local originalCFrame = hrp.CFrame
+		local originalCameraSubject = camera.CameraSubject
+		local originalAnchored = hrp.Anchored
+		local originalAutoRotate = humanoid.AutoRotate
+
+		local proxy
+		local movementConnection
+
+		local function cleanup()
+			if movementConnection then
+				movementConnection:Disconnect()
+				movementConnection = nil
+			end
+
+			if proxy then
+				proxy:Destroy()
+				proxy = nil
+			end
+
+			if getCharacter() then
+				hrp.Anchored = originalAnchored
+				humanoid.AutoRotate = originalAutoRotate
+
+				hrp.AssemblyLinearVelocity = Vector3.zero
+				hrp.AssemblyAngularVelocity = Vector3.zero
+
+				camera.CameraSubject = humanoid
+			else
+				camera.CameraSubject = originalCameraSubject
+			end
+
+			ultActive = false
+			isBusy = false
+		end
+
+		local success, err = pcall(function()
+			playSound("rbxassetid://9085319375")
+
+			-- Create the surface proxy.
+			proxy = Instance.new("Part")
+			proxy.Name = "AlliProxy"
+			proxy.Size = Vector3.new(2, 1, 2)
+			proxy.Anchored = true
+			proxy.CanCollide = false
+			proxy.CanTouch = false
+			proxy.CanQuery = false
+			proxy.Transparency = 1
+			proxy.CFrame = originalCFrame
+			proxy.Parent = workspace
+
+			-- Anchor the real character underground.
+			hrp.Anchored = true
+			humanoid.AutoRotate = false
+
+			hrp.CFrame = originalCFrame
+				* CFrame.new(0, -SETTINGS.ULT_HIDE_DEPTH, 0)
+
+			-- Make the camera follow the proxy.
+			camera.CameraSubject = proxy
+
+			local params = RaycastParams.new()
+			params.FilterType = Enum.RaycastFilterType.Exclude
+			params.FilterDescendantsInstances = {character, proxy}
+
+			local elapsed = 0
+			local duration = SETTINGS.ULT_HIDE_TIME
+
+			-- Move the proxy using the player's movement input.
+			movementConnection = RunService.Heartbeat:Connect(function(dt)
+				if not scriptRunning or not proxy or not proxy.Parent then
+					return
+				end
+
+				local startTime = os.clock()
+				local nextGlitch = 3
+
+				if os.clock() - startTime < SETTINGS.ULT_HIDE_TIME then
+					local elapsed = os.clock() - startTime
+
+					if nextGlitch <= 5 and elapsed >= nextGlitch then
+						glitchAppear(0.12)
+
+						if nextGlitch == 3 then
+							nextGlitch = 5
+						else
+							nextGlitch = 6
+						end
+					end
+				end
+
+				elapsed += dt
+
+				local moveDirection = humanoid.MoveDirection
+				local speed = humanoid.WalkSpeed
+
+				local nextPosition = proxy.Position
+
+				if moveDirection.Magnitude > 0.05 then
+					nextPosition += moveDirection * speed * dt
+				end
+
+				-- Keep the proxy aligned with the ground.
+				local result = workspace:Raycast(
+					nextPosition + Vector3.new(0, 12, 0),
+					Vector3.new(0, -100, 0),
+					params
+				)
+
+				if result then
+					nextPosition = Vector3.new(
+						nextPosition.X,
+						result.Position.Y + humanoid.HipHeight
+							+ hrp.Size.Y / 2,
+						nextPosition.Z
+					)
+				end
+
+				-- Rotate the proxy in the direction of movement.
+				if moveDirection.Magnitude > 0.05 then
+					proxy.CFrame = CFrame.lookAt(
+						nextPosition,
+						nextPosition + moveDirection
+					)
+				else
+					proxy.Position = nextPosition
+				end
+			end)
+
+			while scriptRunning and elapsed < duration do
+				if not getCharacter() then
+					break
+				end
+
+				task.wait(0.05)
+			end
+
+			-- Return the real character to the proxy.
+			if scriptRunning and getCharacter()
+				and proxy and proxy.Parent then
+
+				local returnCFrame = proxy.CFrame
+					* CFrame.new(
+						0,
+						humanoid.HipHeight + hrp.Size.Y / 2,
+						0
+					)
+
+				hrp.CFrame = returnCFrame
+			end
+		end)
+		
+
+		cleanup()
+
+		if not success then
+			warn("Alli ultimate error:", err)
+		end
+
+		if scriptRunning then
+			task.wait(SETTINGS.ULT_COOLDOWN)
+		end
+	end
+
+	-- ================= GUI =================
+
+	local function createGUI()
+		local gui = Instance.new("ScreenGui")
+		gui.Name = "AlliScriptUI"
+		gui.ResetOnSpawn = false
+		gui.Parent = playerGui
+
+		activeGui = gui
+
+		local main = Instance.new("Frame")
+		main.Name = "Main"
+		main.Size = UDim2.fromOffset(250, 235)
+		main.Position = UDim2.new(0, 20, 0.3, 0)
+		main.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+		main.BorderSizePixel = 0
+		main.Parent = gui
+
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0, 10)
+		corner.Parent = main
+
+		local title = Instance.new("TextLabel")
+		title.Size = UDim2.new(1, 0, 0, 35)
+		title.BackgroundColor3 = Color3.fromRGB(65, 35, 100)
+		title.Text = "ALLI SCRIPT"
+		title.TextColor3 = Color3.new(1, 1, 1)
+		title.TextScaled = true
+		title.Font = Enum.Font.GothamBold
+		title.Parent = main
+
+		local titleCorner = Instance.new("UICorner")
+		titleCorner.CornerRadius = UDim.new(0, 10)
+		titleCorner.Parent = title
+
+		local function makeButton(text, position, callback)
+			local button = Instance.new("TextButton")
+			button.Size = UDim2.new(1, -20, 0, 35)
+			button.Position = position
+			button.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+			button.TextColor3 = Color3.new(1, 1, 1)
+			button.Text = text
+			button.TextScaled = true
+			button.Font = Enum.Font.Gotham
+			button.Parent = main
+
+			local buttonCorner = Instance.new("UICorner")
+			buttonCorner.CornerRadius = UDim.new(0, 6)
+			buttonCorner.Parent = button
+
+			button.Activated:Connect(callback)
+
+			return button
+		end
+
+		makeButton(
+			"E - Jump Attack",
+			UDim2.new(0, 10, 0, 45),
+			jumpAttack
+		)
+
+		makeButton(
+			"Q - Normal Dash",
+			UDim2.new(0, 10, 0, 85),
+			normalDash
+		)
+
+		makeButton(
+			"R - Ultimate Hide",
+			UDim2.new(0, 10, 0, 125),
+			ultimateHide
+		)
+
+		local stopButton = makeButton(
+			"STOP SCRIPT",
+			UDim2.new(0, 10, 0, 175),
+			function()
+				scriptRunning = false
+				ultActive = false
+
+				ContextActionService:UnbindAction("Alli_JumpAttack")
+				ContextActionService:UnbindAction("Alli_NormalDash")
+				ContextActionService:UnbindAction("Alli_Ultimate")
+				ContextActionService:UnbindAction("Alli_ToggleGUI")
+
+				disconnectCharacterConnections()
+
+				if activeGui then
+					activeGui:Destroy()
+					activeGui = nil
+				end
+			end
+		)
+
+		stopButton.BackgroundColor3 = Color3.fromRGB(150, 35, 45)
+
+		-- Allow dragging the GUI using its title bar.
+		local dragging = false
+		local dragStart
+		local startPosition
+
+		title.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1
+				or input.UserInputType == Enum.UserInputType.Touch then
+
+				dragging = true
+				dragStart = input.Position
+				startPosition = main.Position
+			end
+		end)
+
+		UserInputService.InputChanged:Connect(function(input)
+			if not dragging then
+				return
+			end
+
+			if input.UserInputType == Enum.UserInputType.MouseMovement
+				or input.UserInputType == Enum.UserInputType.Touch then
+
+				local delta = input.Position - dragStart
+
+				main.Position = UDim2.new(
+					startPosition.X.Scale,
+					startPosition.X.Offset + delta.X,
+					startPosition.Y.Scale,
+					startPosition.Y.Offset + delta.Y
+				)
+			end
+		end)
+
+		UserInputService.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1
+				or input.UserInputType == Enum.UserInputType.Touch then
+
+				dragging = false
+			end
+		end)
+
+		return gui
+	end
+
+	-- ================= INPUT =================
+
+	local function bindAction(actionName, callback, keyCode, title, position)
+		ContextActionService:BindAction(
+			actionName,
+			function(_, inputState)
+				if not scriptRunning then
+					return Enum.ContextActionResult.Pass
+				end
+
+				if inputState == Enum.UserInputState.Begin then
+					task.spawn(callback)
+				end
+
+				return Enum.ContextActionResult.Sink
+			end,
+			true,
+			keyCode
+		)
+
+		ContextActionService:SetTitle(actionName, title)
+		ContextActionService:SetPosition(actionName, position)
+	end
+
+	bindAction(
+		"Alli_JumpAttack",
+		jumpAttack,
+		Enum.KeyCode.E,
+		"Jump Attack",
+		UDim2.new(1, -170, 0, 100)
+	)
+
+	bindAction(
+		"Alli_NormalDash",
+		normalDash,
+		Enum.KeyCode.Q,
+		"Dash",
+		UDim2.new(1, -100, 0, 160)
+	)
+
+	bindAction(
+		"Alli_Ultimate",
+		ultimateHide,
+		Enum.KeyCode.R,
+		"Ultimate",
+		UDim2.new(1, -170, 0, 220)
+	)
+
+	-- M toggles the GUI.
+	ContextActionService:BindAction(
+		"Alli_ToggleGUI",
+		function(_, inputState)
+			if inputState == Enum.UserInputState.Begin
+				and scriptRunning
+				and activeGui then
+
+				activeGui.Enabled = not activeGui.Enabled
+			end
+
+			return Enum.ContextActionResult.Pass
+		end,
+		false,
+		Enum.KeyCode.M
+	)
+
+	-- ================= CHARACTER RESPAWN =================
+
+	local function onCharacterAdded(newCharacter)
+		if not scriptRunning then
+			return
+		end
+
+		disconnectCharacterConnections()
+
+		character = newCharacter
+		humanoid = character:WaitForChild("Humanoid")
+		hrp = character:WaitForChild("HumanoidRootPart")
+
+		ultActive = false
+		isBusy = false
+
+		local connection = humanoid.Died:Connect(function()
+			ultActive = false
+			isBusy = false
+		end)
+
+		table.insert(characterConnections, connection)
+	end
+
+	player.CharacterAdded:Connect(onCharacterAdded)
+
+	if player.Character then
+		onCharacterAdded(player.Character)
+	end
+
+	createGUI()
+
+	notify(
+		"Alli Script",
+		"Loaded! E: Jump Attack | Q: Dash | R: Ultimate"
+	)
+
+end
+
+
 -- Create GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "AdminPanel"
@@ -1750,6 +2564,19 @@ buildZone.TextColor3 = Color3.fromRGB(255,255,255)
 buildZone.Font = Enum.Font.SourceSansBold
 buildZone.TextSize = 20
 buildZone.Parent = scrollingFrame
+
+-- Build Zone
+local alli = Instance.new("TextButton")
+alli.Text = "Alli Script"
+alli.Size = UDim2.new(0, 150, 0, 35)
+alli.Position = UDim2.new(0, 180, 0, 420)
+alli.BackgroundColor3 = Color3.fromRGB(80,80,120) -- yah feature zone build karte hoga
+alli.TextColor3 = Color3.fromRGB(255,255,255)
+alli.Font = Enum.Font.SourceSansBold
+alli.TextSize = 20
+alli.Parent = scrollingFrame
+
+alli.Activated:Connect(alliscript)
 
 
 -- Hide Gui
