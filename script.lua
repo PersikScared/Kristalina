@@ -2074,6 +2074,19 @@ function alliscript()
 			if not enrageConnection then
 				enrageConnection = RunService.Heartbeat:Connect(updateEnrageHighlights)
 			end
+			
+			-- Red highlight on Alli while enraged
+			local alliHighlight = character:FindFirstChild("EnrageSelfHighlight")
+
+			if not alliHighlight then
+				alliHighlight = Instance.new("Highlight")
+				alliHighlight.Name = "EnrageSelfHighlight"
+				alliHighlight.FillColor = Color3.fromRGB(255, 0, 0)
+				alliHighlight.OutlineColor = Color3.fromRGB(255, 70, 70)
+				alliHighlight.FillTransparency = 0.5
+				alliHighlight.OutlineTransparency = 0
+				alliHighlight.Parent = character
+			end
 			playSound("rbxassetid://133440767054196")
 			updateEnrageHighlights()
 			notify("Enrage", "Enrage active: nearby players highlighted, speed increased.")
@@ -2081,6 +2094,11 @@ function alliscript()
 			if enrageConnection then
 				enrageConnection:Disconnect()
 				enrageConnection = nil
+			end
+			
+			local highlight = character:FindFirstChild("EnrageSelfHighlight")
+			if highlight then
+				highlight:Destroy()
 			end
 			clearEnrageHighlights()
 			notify("Enrage", "Enrage ended.")
