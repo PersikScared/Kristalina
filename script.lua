@@ -1387,15 +1387,15 @@ function alliscript()
 
 	-- ================= SETTINGS =================
 	local SETTINGS = {
-		DASH_DISTANCE = 14,
+		DASH_DISTANCE = 7,
 		DASH_TIME = 0.14,
 
 		JUMP_ATTACK_DISTANCE = 30,
 		JUMP_ATTACK_TIME = 0.3,
-		JUMP_HEIGHT = 25,
+		JUMP_HEIGHT = 15,
 
 		ULT_HIDE_DEPTH = 12,
-		ULT_HIDE_TIME = 5,
+		ULT_HIDE_TIME = 7,
 
 		DASH_COOLDOWN = 0.35,
 		JUMP_COOLDOWN = 0.7,
@@ -1425,6 +1425,8 @@ function alliscript()
 	local character
 	local humanoid
 	local hrp
+	
+	local proxy
 
 	local characterConnections = {}
 	local activeGui
@@ -1753,6 +1755,7 @@ function alliscript()
 
 	-- ================= R: ULTIMATE HIDE =================
 
+
 	local function ultimateHide()
 		if not scriptRunning or isBusy or ultActive then
 			return
@@ -1771,8 +1774,8 @@ function alliscript()
 		local originalAnchored = hrp.Anchored
 		local originalAutoRotate = humanoid.AutoRotate
 
-		local proxy
 		local movementConnection
+		local glitchRunning = false
 
 		local function cleanup()
 			if movementConnection then
@@ -1788,10 +1791,8 @@ function alliscript()
 			if getCharacter() then
 				hrp.Anchored = originalAnchored
 				humanoid.AutoRotate = originalAutoRotate
-
 				hrp.AssemblyLinearVelocity = Vector3.zero
 				hrp.AssemblyAngularVelocity = Vector3.zero
-
 				camera.CameraSubject = humanoid
 			else
 				camera.CameraSubject = originalCameraSubject
@@ -1816,58 +1817,78 @@ function alliscript()
 			proxy.CFrame = originalCFrame
 			proxy.Parent = workspace
 
-			-- Anchor the real character underground.
+			-- Freeze the real character underground.
 			hrp.Anchored = true
 			humanoid.AutoRotate = false
-
 			hrp.CFrame = originalCFrame
 				* CFrame.new(0, -SETTINGS.ULT_HIDE_DEPTH, 0)
 
-			-- Make the camera follow the proxy.
 			camera.CameraSubject = proxy
 
 			local params = RaycastParams.new()
 			params.FilterType = Enum.RaycastFilterType.Exclude
 			params.FilterDescendantsInstances = {character, proxy}
 
-			local elapsed = 0
-			local duration = SETTINGS.ULT_HIDE_TIME
+			local startTime = os.clock()
+			local duration = 7
+			local nextGlitch = 3
 
-			-- Move the proxy using the player's movement input.
+			-- Briefly reveal the character without moving its root.
+			local function glitchAppear()
+				if glitchRunning or not getCharacter() then
+					return
+				end
+
+				glitchRunning = true
+
+				local saved = {}
+
+				for _, obj in ipairs(character:GetDescendants()) do
+					if obj:IsA("BasePart") and obj ~= hrp then
+						saved[obj] = obj.LocalTransparencyModifier
+						obj.LocalTransparencyModifier = 0
+					elseif obj:IsA("Decal") or obj:IsA("Texture") then
+						saved[obj] = obj.Transparency
+						obj.Transparency = 0
+					end
+				end
+
+				task.wait(0.12)
+
+				for obj, transparency in pairs(saved) do
+					if obj.Parent then
+						if obj:IsA("BasePart") then
+							obj.LocalTransparencyModifier = transparency
+						else
+							obj.Transparency = transparency
+						end
+					end
+				end
+
+				glitchRunning = false
+			end
+
 			movementConnection = RunService.Heartbeat:Connect(function(dt)
 				if not scriptRunning or not proxy or not proxy.Parent then
 					return
 				end
 
-				local startTime = os.clock()
-				local nextGlitch = 3
+				local elapsed = os.clock() - startTime
 
-				if os.clock() - startTime < SETTINGS.ULT_HIDE_TIME then
-					local elapsed = os.clock() - startTime
-
-					if nextGlitch <= 5 and elapsed >= nextGlitch then
-						glitchAppear(0.12)
-
-						if nextGlitch == 3 then
-							nextGlitch = 5
-						else
-							nextGlitch = 6
-						end
-					end
+				if nextGlitch <= 5 and elapsed >= nextGlitch then
+					nextGlitch = nextGlitch == 3 and 5 or 6
+					task.spawn(glitchAppear)
 				end
 
-				elapsed += dt
-
+				-- Follow the player's movement input.
 				local moveDirection = humanoid.MoveDirection
-				local speed = humanoid.WalkSpeed
-
 				local nextPosition = proxy.Position
 
 				if moveDirection.Magnitude > 0.05 then
-					nextPosition += moveDirection * speed * dt
+					nextPosition += moveDirection * humanoid.WalkSpeed * dt
 				end
 
-				-- Keep the proxy aligned with the ground.
+				-- Keep the proxy at ground height.
 				local result = workspace:Raycast(
 					nextPosition + Vector3.new(0, 12, 0),
 					Vector3.new(0, -100, 0),
@@ -1883,7 +1904,6 @@ function alliscript()
 					)
 				end
 
-				-- Rotate the proxy in the direction of movement.
 				if moveDirection.Magnitude > 0.05 then
 					proxy.CFrame = CFrame.lookAt(
 						nextPosition,
@@ -1894,30 +1914,30 @@ function alliscript()
 				end
 			end)
 
-			while scriptRunning and elapsed < duration do
+			-- Wait for the full duration.
+			while scriptRunning and os.clock() - startTime < duration do
 				if not getCharacter() then
 					break
 				end
 
-				task.wait(0.05)
+				task.wait(0.02)
 			end
 
-			-- Return the real character to the proxy.
+			-- Return the player to the proxy.
 			if scriptRunning and getCharacter()
 				and proxy and proxy.Parent then
 
-				local returnCFrame = proxy.CFrame
-					* CFrame.new(
-						0,
-						humanoid.HipHeight + hrp.Size.Y / 2,
-						0
-					)
+				local groundPosition = proxy.Position
+				local direction = proxy.CFrame.LookVector
 
-				hrp.CFrame = returnCFrame
+				hrp.CFrame = CFrame.lookAt(
+					groundPosition,
+					groundPosition + direction
+				)
 			end
 		end)
-		
 
+		-- This was missing in your version.
 		cleanup()
 
 		if not success then
