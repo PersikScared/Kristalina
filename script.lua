@@ -1361,6 +1361,7 @@ function kazescript()
 	bind("M_Action", handleM, Enum.KeyCode.M, "Toggle GUI", UDim2.new(1, -130, 0, -255))
 end
 
+
 function alliscript()
 	-- ================= SERVICES =================
 	local Players = game:GetService("Players")
@@ -1373,49 +1374,32 @@ function alliscript()
 	local player = Players.LocalPlayer
 	local playerGui = player:WaitForChild("PlayerGui")
 
-	-- ================= STATE =================
-	local scriptRunning = true
-	local isBusy = false
-	local ultActive = false
-
-	local character
-	local humanoid
-	local hrp
-
-	local characterConnections = {}
-	local activeGui
-
 	-- ================= SETTINGS =================
 	local SETTINGS = {
 		DASH_DISTANCE = 7,
 		DASH_TIME = 0.14,
-
 		JUMP_ATTACK_DISTANCE = 30,
 		JUMP_ATTACK_TIME = 0.3,
 		JUMP_HEIGHT = 15,
-
-		ULT_HIDE_DEPTH = 12,
+		ULT_HIDE_DEPTH = -1000,
 		ULT_HIDE_TIME = 7,
-
 		DASH_COOLDOWN = 0.35,
 		JUMP_COOLDOWN = 0.7,
 		ULT_COOLDOWN = 10,
+		ENRAGE_RANGE = 30,
+		ENRAGE_SPEED = 24,
+		HYPERCHARGE_MULTIPLIER = 1.5,
+		HYPERCHARGE_TIME = 7,
 	}
 
-	-- ================= YOUR SCRIPT =================
-	-- Put the remaining Alli Script code here:
-	-- 1. Character helpers
-	-- 2. Raycasting
-	-- 3. Normal dash
-	-- 4. Jump attack
-	-- 5. Ultimate hide
-	-- 6. GUI creation
-	-- 7. Input bindings
-	-- 8. Character respawn handling
+	local enrageActive = false
+	local hyperchargeActive = false
+	local normalWalkSpeed = 16
+	local enrageConnection
+	local enrageHighlights = {}
+	local hyperchargeEmitter
+	local hyperchargeToken = 0
 
-	-- Keep all helper functions and variables inside
-	-- alliscript() so they remain local to this script.
-	
 	-- ================= STATE =================
 
 	local scriptRunning = true
@@ -1425,12 +1409,11 @@ function alliscript()
 	local character
 	local humanoid
 	local hrp
-	
+
 	local proxy
 
 	local characterConnections = {}
 	local activeGui
-	local actionConnections = {}
 
 	local function disconnectCharacterConnections()
 		for _, connection in ipairs(characterConnections) do
@@ -1475,11 +1458,10 @@ function alliscript()
 		sound.Parent = hrp
 
 		sound:Play()
-		Debris:AddItem(sound, 3)
+		Debris:AddItem(sound, 5)
 	end
 
 	-- ================= RAYCAST =================
-
 
 	local function raycastGround(position)
 		if not getCharacter() then
@@ -1491,19 +1473,16 @@ function alliscript()
 		params.FilterDescendantsInstances = {character}
 
 		local rootHeight = humanoid.HipHeight + hrp.Size.Y / 2
+		local currentFloorY = hrp.Position.Y - rootHeight
+		-- Only search around the character's current floor height. This avoids
+		-- treating a higher tower roof as a valid landing surface.
+		local origin = Vector3.new(position.X, currentFloorY + 2, position.Z)
+		local result = workspace:Raycast(origin, Vector3.new(0, -10, 0), params)
 
-		-- Start near the character's feet, not high above the destination.
-		local origin = Vector3.new(
-			position.X,
-			position.Y - rootHeight + 2,
-			position.Z
-		)
-
-		return workspace:Raycast(
-			origin,
-			Vector3.new(0, -8, 0),
-			params
-		)
+		if result and result.Position.Y > currentFloorY + 2 then
+			return nil
+		end
+		return result
 	end
 
 	local function getGroundedPosition(position)
@@ -1512,21 +1491,14 @@ function alliscript()
 		end
 
 		local result = raycastGround(position)
-
 		if result then
 			local rootHeight = humanoid.HipHeight + hrp.Size.Y / 2
-
-			return Vector3.new(
-				position.X,
-				result.Position.Y + rootHeight,
-				position.Z
-			)
+			return result.Position + Vector3.new(0, rootHeight, 0)
 		end
 
-		-- If no floor is found, don't guess a new height.
-		return position
+		-- If no safe floor at this height is found, stay at the current level.
+		return Vector3.new(position.X, hrp.Position.Y, position.Z)
 	end
-
 
 	local function validatePath(originPos, targetPos, filterInstances)
 		local params = RaycastParams.new()
@@ -1597,7 +1569,7 @@ function alliscript()
 			end
 		end
 	end
-	
+
 
 	local function moveCharacter(targetCFrame, duration, arcHeight)
 		if not getCharacter() or isBusy or ultActive then
@@ -1609,6 +1581,8 @@ function alliscript()
 		local startCFrame = hrp.CFrame
 		local startPosition = startCFrame.Position
 		local startTime = os.clock()
+		hrp.AssemblyAngularVelocity = Vector3.zero
+		hrp.AssemblyLinearVelocity = Vector3.zero
 
 		duration = math.max(duration, 0.03)
 		arcHeight = arcHeight or 0
@@ -1641,12 +1615,18 @@ function alliscript()
 				)
 			end
 
-			local facing = targetCFrame.LookVector
-
-			hrp.CFrame = CFrame.lookAt(
-				position,
-				position + facing
+			local facing = Vector3.new(
+				targetCFrame.LookVector.X, 0, targetCFrame.LookVector.Z
 			)
+			if facing.Magnitude < 0.05 then
+				facing = Vector3.new(hrp.CFrame.LookVector.X, 0, hrp.CFrame.LookVector.Z)
+			end
+			if facing.Magnitude < 0.05 then
+				facing = Vector3.new(0, 0, -1)
+			end
+			facing = facing.Unit
+
+			hrp.CFrame = CFrame.lookAt(position, position + facing)
 
 			if alpha >= 1 then
 				break
@@ -1657,6 +1637,8 @@ function alliscript()
 
 		if getCharacter() and success and scriptRunning then
 			hrp.CFrame = targetCFrame
+			hrp.AssemblyAngularVelocity = Vector3.zero
+			hrp.AssemblyLinearVelocity = Vector3.zero
 		end
 
 		isBusy = false
@@ -1741,8 +1723,8 @@ function alliscript()
 		if tool then
 			tool:Activate()
 		end
-		
-		
+
+
 
 		local params = RaycastParams.new()
 		params.FilterType = Enum.RaycastFilterType.Exclude
@@ -1772,20 +1754,26 @@ function alliscript()
 				+ offset.Unit * SETTINGS.JUMP_ATTACK_DISTANCE
 		end
 
-		-- Land near the target when ground is available.
+		-- Use the cursor's X/Z, but only land on a safe surface near the
+		-- current floor. A cursor hit on a high roof must not set our Y level.
 		local landingPosition = getGroundedPosition(targetPosition)
+		local horizontalDirection = Vector3.new(
+			landingPosition.X - origin.X,
+			0,
+			landingPosition.Z - origin.Z
+		)
 
-		local direction = landingPosition - origin
-
-		if direction.Magnitude < 0.1 then
-			direction = hrp.CFrame.LookVector
-		else
-			direction = direction.Unit
+		if horizontalDirection.Magnitude < 0.1 then
+			horizontalDirection = Vector3.new(hrp.CFrame.LookVector.X, 0, hrp.CFrame.LookVector.Z)
 		end
+		if horizontalDirection.Magnitude < 0.1 then
+			horizontalDirection = Vector3.new(0, 0, -1)
+		end
+		horizontalDirection = horizontalDirection.Unit
 
 		local targetCFrame = CFrame.lookAt(
 			landingPosition,
-			landingPosition + direction
+			landingPosition + horizontalDirection
 		)
 
 		playSound("rbxassetid://80056904520798")
@@ -1813,6 +1801,8 @@ function alliscript()
 
 		isBusy = true
 		ultActive = true
+		
+		playSound("rbxassetid://136361841168689")
 
 		local camera = workspace.CurrentCamera
 		local originalCFrame = hrp.CFrame
@@ -1951,15 +1941,9 @@ function alliscript()
 
 				-- Keep the proxy at ground height (start from the proxy's
 				-- current Y, not +12 above, to avoid hitting wall tops).
-
 				local rootHeight = humanoid.HipHeight + hrp.Size.Y / 2
-
 				local result = workspace:Raycast(
-					Vector3.new(
-						nextPosition.X,
-						nextPosition.Y - rootHeight + 2,
-						nextPosition.Z
-					),
+					Vector3.new(nextPosition.X, nextPosition.Y - rootHeight + 2, nextPosition.Z),
 					Vector3.new(0, -8, 0),
 					params
 				)
@@ -1971,7 +1955,6 @@ function alliscript()
 						nextPosition.Z
 					)
 				end
-
 
 				if moveDirection.Magnitude > 0.05 then
 					proxy.CFrame = CFrame.lookAt(
@@ -2018,6 +2001,161 @@ function alliscript()
 		end
 	end
 
+	-- ================= T: ENRAGE =================
+
+	local function clearEnrageHighlights()
+		for targetPlayer, highlight in pairs(enrageHighlights) do
+			if highlight then highlight:Destroy() end
+			enrageHighlights[targetPlayer] = nil
+		end
+	end
+
+	local function updateEnrageHighlights()
+		if not enrageActive or not getCharacter() then
+			clearEnrageHighlights()
+			return
+		end
+
+		for _, targetPlayer in ipairs(Players:GetPlayers()) do
+			if targetPlayer ~= player then
+				local targetCharacter = targetPlayer.Character
+				local targetRoot = targetCharacter and targetCharacter:FindFirstChild("HumanoidRootPart")
+				local targetHumanoid = targetCharacter and targetCharacter:FindFirstChildOfClass("Humanoid")
+				local inRange = targetRoot and targetHumanoid and targetHumanoid.Health > 0
+					and (targetRoot.Position - hrp.Position).Magnitude <= SETTINGS.ENRAGE_RANGE
+
+				if inRange then
+					local highlight = enrageHighlights[targetPlayer]
+					if not highlight or not highlight.Parent then
+						highlight = Instance.new("Highlight")
+						highlight.Name = "AlliEnrageHighlight"
+						highlight.FillColor = Color3.fromRGB(255, 65, 45)
+						highlight.OutlineColor = Color3.fromRGB(255, 190, 80)
+						highlight.FillTransparency = 0.55
+						highlight.OutlineTransparency = 0
+						highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+						highlight.Parent = targetCharacter
+						highlight.Adornee = targetCharacter
+						enrageHighlights[targetPlayer] = highlight
+					elseif highlight.Adornee ~= targetCharacter then
+						highlight.Adornee = targetCharacter
+					end
+				else
+					local highlight = enrageHighlights[targetPlayer]
+					if highlight then highlight:Destroy() end
+					enrageHighlights[targetPlayer] = nil
+				end
+			end
+		end
+
+		for targetPlayer, highlight in pairs(enrageHighlights) do
+			if targetPlayer.Parent ~= Players then
+				if highlight then highlight:Destroy() end
+				enrageHighlights[targetPlayer] = nil
+			end
+		end
+	end
+
+	local function applyMovementSpeed()
+		if not getCharacter() then return end
+		local speed = enrageActive and SETTINGS.ENRAGE_SPEED or normalWalkSpeed
+		if hyperchargeActive then
+			speed *= SETTINGS.HYPERCHARGE_MULTIPLIER
+		end
+		humanoid.WalkSpeed = speed
+	end
+
+	local function toggleEnrage()
+		if not scriptRunning or not getCharacter() then return end
+		enrageActive = not enrageActive
+		applyMovementSpeed()
+
+		if enrageActive then
+			if not enrageConnection then
+				enrageConnection = RunService.Heartbeat:Connect(updateEnrageHighlights)
+			end
+			playSound("rbxassetid://133440767054196")
+			updateEnrageHighlights()
+			notify("Enrage", "Enrage active: nearby players highlighted, speed increased.")
+		else
+			if enrageConnection then
+				enrageConnection:Disconnect()
+				enrageConnection = nil
+			end
+			clearEnrageHighlights()
+			notify("Enrage", "Enrage ended.")
+		end
+	end
+
+	-- ================= Y: HYPERCHARGE =================
+
+	local function hypercharge()
+		if not scriptRunning or not getCharacter() then return end
+		hyperchargeToken += 1
+		local thisToken = hyperchargeToken
+		hyperchargeActive = true
+		applyMovementSpeed()
+		playSound("rbxassetid://96987880339732")
+
+		if hyperchargeEmitter then
+			hyperchargeEmitter:Destroy()
+			hyperchargeEmitter = nil
+		end
+
+		local attachment = hrp:FindFirstChild("AlliHyperchargeAttachment")
+		if not attachment then
+			attachment = Instance.new("Attachment")
+			attachment.Name = "AlliHyperchargeAttachment"
+			attachment.Parent = hrp
+		end
+
+		local emitter = Instance.new("ParticleEmitter")
+		emitter.Name = "AlliHyperchargeParticles"
+		emitter.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+		emitter.Color = ColorSequence.new(
+			Color3.fromRGB(170, 60, 255),
+			Color3.fromRGB(90, 30, 180)
+		)
+		emitter.LightEmission = 0.8
+		emitter.Rate = 35
+		emitter.Lifetime = NumberRange.new(0.35, 0.8)
+		emitter.Speed = NumberRange.new(1, 3)
+		emitter.SpreadAngle = Vector2.new(180, 180)
+		emitter.Parent = attachment
+		hyperchargeEmitter = emitter
+
+		task.delay(SETTINGS.HYPERCHARGE_TIME, function()
+			if thisToken ~= hyperchargeToken then return end
+			hyperchargeActive = false
+			if hyperchargeEmitter then
+				hyperchargeEmitter:Destroy()
+				hyperchargeEmitter = nil
+			end
+			if attachment and attachment.Parent and #attachment:GetChildren() == 0 then
+				attachment:Destroy()
+			end
+			applyMovementSpeed()
+		end)
+	end
+
+	local function cleanupAbilities()
+		enrageActive = false
+		hyperchargeActive = false
+		hyperchargeToken += 1
+		if enrageConnection then
+			enrageConnection:Disconnect()
+			enrageConnection = nil
+		end
+		clearEnrageHighlights()
+		if hyperchargeEmitter then
+			hyperchargeEmitter:Destroy()
+			hyperchargeEmitter = nil
+		end
+		if getCharacter() then
+			humanoid.WalkSpeed = normalWalkSpeed
+		end
+	end
+
 	-- ================= GUI =================
 
 	local function createGUI()
@@ -2030,7 +2168,7 @@ function alliscript()
 
 		local main = Instance.new("Frame")
 		main.Name = "Main"
-		main.Size = UDim2.fromOffset(250, 235)
+		main.Size = UDim2.fromOffset(250, 305)
 		main.Position = UDim2.new(0, 20, 0.3, 0)
 		main.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 		main.BorderSizePixel = 0
@@ -2091,16 +2229,31 @@ function alliscript()
 			ultimateHide
 		)
 
+		makeButton(
+			"T - Enrage (toggle)",
+			UDim2.new(0, 10, 0, 165),
+			toggleEnrage
+		)
+
+		makeButton(
+			"Y - Hypercharge (7s)",
+			UDim2.new(0, 10, 0, 205),
+			hypercharge
+		)
+
 		local stopButton = makeButton(
 			"STOP SCRIPT",
-			UDim2.new(0, 10, 0, 175),
+			UDim2.new(0, 10, 0, 255),
 			function()
 				scriptRunning = false
 				ultActive = false
+				cleanupAbilities()
 
 				ContextActionService:UnbindAction("Alli_JumpAttack")
 				ContextActionService:UnbindAction("Alli_NormalDash")
 				ContextActionService:UnbindAction("Alli_Ultimate")
+				ContextActionService:UnbindAction("Alli_Enrage")
+				ContextActionService:UnbindAction("Alli_Hypercharge")
 				ContextActionService:UnbindAction("Alli_ToggleGUI")
 
 				disconnectCharacterConnections()
@@ -2111,6 +2264,43 @@ function alliscript()
 				end
 			end
 		)
+		local isrolling_alli = false
+		
+		local allibutton = Instance.new("ImageButton")
+		allibutton.Size = UDim2.new(0, 40, 0, 40)
+		allibutton.ScaleType = Enum.ScaleType.Fit
+		allibutton.Image = "rbxassetid://126802968771567"
+		allibutton.Position = UDim2.new(0.6, 0, 0.3, -40)
+
+		local isMoving = false
+		allibutton.MouseButton1Down:Connect(function()
+			isMoving = true
+		end)
+		task.spawn(function()
+			while scriptRunning do
+				if isMoving then
+					--move to mouse position
+					allibutton.Position = UDim2.new(0, player:GetMouse().X, 0, player:GetMouse().Y)
+				end	
+				task.wait(0.01)
+			end
+		end)
+		allibutton.MouseButton1Up:Connect(function()
+			isMoving = false
+		end)
+		allibutton.Parent = gui
+
+		local function kazsetrolling()
+			if not isrolling_alli then
+				isrolling_alli  = true
+				main.Visible = true
+			else
+				isrolling_alli = false
+				main.Visible = false
+			end
+		end
+
+		allibutton.MouseButton1Click:Connect(kazsetrolling)
 
 		stopButton.BackgroundColor3 = Color3.fromRGB(150, 35, 45)
 
@@ -2207,6 +2397,22 @@ function alliscript()
 		UDim2.new(1, -170, 0, 220)
 	)
 
+	bindAction(
+		"Alli_Enrage",
+		toggleEnrage,
+		Enum.KeyCode.T,
+		"Enrage",
+		UDim2.new(1, -100, 0, 280)
+	)
+
+	bindAction(
+		"Alli_Hypercharge",
+		hypercharge,
+		Enum.KeyCode.Y,
+		"Hypercharge",
+		UDim2.new(1, -170, 0, 340)
+	)
+
 	-- M toggles the GUI.
 	ContextActionService:BindAction(
 		"Alli_ToggleGUI",
@@ -2239,10 +2445,31 @@ function alliscript()
 
 		ultActive = false
 		isBusy = false
+		normalWalkSpeed = humanoid.WalkSpeed
+		enrageActive = false
+		hyperchargeActive = false
+		hyperchargeToken += 1
+		if hyperchargeEmitter then
+			hyperchargeEmitter:Destroy()
+			hyperchargeEmitter = nil
+		end
+		if enrageConnection then
+			enrageConnection:Disconnect()
+			enrageConnection = nil
+		end
+		clearEnrageHighlights()
 
 		local connection = humanoid.Died:Connect(function()
 			ultActive = false
 			isBusy = false
+
+			local sound = Instance.new("Sound")
+			sound.SoundId = "rbxassetid://91169401409746"
+			sound.Volume = 2
+			sound.Parent = workspace
+
+			sound:Play()
+			Debris:AddItem(sound, 5)
 		end)
 
 		table.insert(characterConnections, connection)
@@ -2255,10 +2482,12 @@ function alliscript()
 	end
 
 	createGUI()
+	
+	playSound("rbxassetid://75295722946341")
 
 	notify(
 		"Alli Script",
-		"Loaded! E: Jump Attack | Q: Dash | R: Ultimate"
+		"Loaded! E: Jump | Q: Dash | R: Ultimate | T: Enrage | Y: Hypercharge"
 	)
 
 end
