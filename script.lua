@@ -1481,12 +1481,21 @@ function alliscript()
 	-- ================= RAYCAST =================
 
 	local function raycastGround(position)
+		if not getCharacter() then
+			return nil
+		end
+
 		local params = RaycastParams.new()
 		params.FilterType = Enum.RaycastFilterType.Exclude
 		params.FilterDescendantsInstances = {character}
 
+		-- Start from the character's current height (not +12 above
+		-- the destination) so the ray doesn't hit the tops of walls
+		-- that are above floor level.
+		local originY = hrp.Position.Y + 5
+
 		return workspace:Raycast(
-			position + Vector3.new(0, 12, 0),
+			Vector3.new(position.X, originY, position.Z),
 			Vector3.new(0, -100, 0),
 			params
 		)
@@ -1506,6 +1515,29 @@ function alliscript()
 		end
 
 		return position
+	end
+
+	local function validatePath(originPos, targetPos, filterInstances)
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		params.FilterDescendantsInstances = filterInstances or {character}
+
+		local direction = targetPos - originPos
+		local distance = direction.Magnitude
+
+		if distance < 0.1 then
+			return targetPos
+		end
+
+		local result = workspace:Raycast(originPos, direction, params)
+
+		if result then
+			-- Stop before the wall to avoid clipping into it.
+			local safeDistance = math.max(result.Distance - 1.5, 0)
+			return originPos + direction.Unit * safeDistance
+		end
+
+		return targetPos
 	end
 
 	-- ================= MOVEMENT =================
@@ -1640,6 +1672,9 @@ function alliscript()
 		local direction = hrp.CFrame.LookVector
 		local destination = hrp.Position
 			+ direction * SETTINGS.DASH_DISTANCE
+
+		-- Don't dash through walls.
+		destination = validatePath(hrp.Position, destination)
 
 		local groundedPosition = getGroundedPosition(destination)
 
@@ -1886,11 +1921,27 @@ function alliscript()
 
 				if moveDirection.Magnitude > 0.05 then
 					nextPosition += moveDirection * humanoid.WalkSpeed * dt
+
+					-- Don't move the proxy through walls.
+					local fromPos = proxy.Position
+					local moveOffset = nextPosition - fromPos
+					if moveOffset.Magnitude > 0.01 then
+						local pathResult = workspace:Raycast(
+							fromPos,
+							moveOffset,
+							params
+						)
+						if pathResult then
+							local safeDist = math.max(pathResult.Distance - 1, 0)
+							nextPosition = fromPos + moveOffset.Unit * safeDist
+						end
+					end
 				end
 
-				-- Keep the proxy at ground height.
+				-- Keep the proxy at ground height (start from the proxy's
+				-- current Y, not +12 above, to avoid hitting wall tops).
 				local result = workspace:Raycast(
-					nextPosition + Vector3.new(0, 12, 0),
+					Vector3.new(nextPosition.X, proxy.Position.Y + 5, nextPosition.Z),
 					Vector3.new(0, -100, 0),
 					params
 				)
