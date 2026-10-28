@@ -1381,15 +1381,19 @@ function alliscript()
 		JUMP_ATTACK_DISTANCE = 30,
 		JUMP_ATTACK_TIME = 0.3,
 		JUMP_HEIGHT = 15,
-		ULT_HIDE_DEPTH = -10000,
+		ULT_HIDE_DEPTH = -1000,
 		ULT_HIDE_TIME = 7,
 		DASH_COOLDOWN = 0.35,
 		JUMP_COOLDOWN = 0.7,
 		ULT_COOLDOWN = 10,
 		ENRAGE_RANGE = 30,
 		ENRAGE_SPEED = 24,
-		HYPERCHARGE_MULTIPLIER = 1.5,
+		ENRAGE_COOLDOWN = 7,
+		ENRAGE_TIME = 7,
+		HYPERCHARGE_COOLDOWN = 25,
+		HYPERCHARGE_MULTIPLIER = 2.5,
 		HYPERCHARGE_TIME = 7,
+		HYPERCHARGE_ATTACK_SPEED = 2
 	}
 
 	local enrageActive = false
@@ -1399,6 +1403,8 @@ function alliscript()
 	local enrageHighlights = {}
 	local hyperchargeEmitter
 	local hyperchargeToken = 0
+	
+	
 
 	-- ================= STATE =================
 
@@ -1524,6 +1530,30 @@ function alliscript()
 	end
 
 	-- ================= MOVEMENT =================
+
+	local BASE_SPEED = 16
+	local ENRAGE_SPEED = 24
+	local HYPERCHARGE_SPEED = 32
+	local HYPERENRAGE_SPEED = 40
+
+	local enrageActive = false
+	local hyperchargeActive = false
+
+	local function updateSpeed()
+		if not humanoid or not humanoid.Parent then
+			return
+		end
+
+		if hyperchargeActive and enrageActive then
+			humanoid.WalkSpeed = HYPERENRAGE_SPEED
+		elseif hyperchargeActive then
+			humanoid.WalkSpeed = HYPERCHARGE_SPEED
+		elseif enrageActive then
+			humanoid.WalkSpeed = ENRAGE_SPEED
+		else
+			humanoid.WalkSpeed = BASE_SPEED
+		end
+	end
 
 	local function glitchAppear(duration)
 		if not getCharacter() then
@@ -1691,7 +1721,13 @@ function alliscript()
 			0
 		)
 
-		task.wait(SETTINGS.DASH_COOLDOWN)
+		local cooldown = SETTINGS.DASH_COOLDOWN
+
+		if hyperchargeActive then
+			cooldown /= SETTINGS.HYPERCHARGE_ATTACK_SPEED
+		end
+
+		task.wait(cooldown)
 	end
 
 	-- ================= E: JUMP ATTACK =================
@@ -1784,7 +1820,13 @@ function alliscript()
 			SETTINGS.JUMP_HEIGHT
 		)
 
-		task.wait(SETTINGS.JUMP_COOLDOWN)
+		local cooldown = SETTINGS.JUMP_COOLDOWN
+
+		if hyperchargeActive then
+			cooldown /= SETTINGS.HYPERCHARGE_ATTACK_SPEED
+		end
+
+		task.wait(cooldown)
 	end
 
 	-- ================= R: ULTIMATE HIDE =================
@@ -1854,10 +1896,13 @@ function alliscript()
 			proxy.Parent = workspace
 
 			-- Freeze the real character underground.
-			hrp.Anchored = true
+
 			humanoid.AutoRotate = false
 			hrp.CFrame = originalCFrame
 				* CFrame.new(0, -SETTINGS.ULT_HIDE_DEPTH, 0)
+			
+			task.wait(.1)
+			hrp.Anchored = true
 
 			camera.CameraSubject = proxy
 
@@ -2065,55 +2110,62 @@ function alliscript()
 		humanoid.WalkSpeed = speed
 	end
 
-	local function toggleEnrage()
-		if not scriptRunning or not getCharacter() then return end
-		enrageActive = not enrageActive
+	local lastEnrage = 0
+
+	local function enrage()
+		if not scriptRunning or not getCharacter()
+			or enrageActive
+			or tick() - lastEnrage < SETTINGS.ENRAGE_COOLDOWN then
+			return
+		end
+
+		lastEnrage = tick()
+		enrageActive = true
 		applyMovementSpeed()
 
-		if enrageActive then
-			if not enrageConnection then
-				enrageConnection = RunService.Heartbeat:Connect(updateEnrageHighlights)
-			end
-			
-			-- Red highlight on Alli while enraged
-			local alliHighlight = character:FindFirstChild("EnrageSelfHighlight")
+		-- Enrage activation sound
+		playSound("rbxassetid://133440767054196")
 
-			if not alliHighlight then
-				alliHighlight = Instance.new("Highlight")
-				alliHighlight.Name = "EnrageSelfHighlight"
-				alliHighlight.FillColor = Color3.fromRGB(255, 0, 0)
-				alliHighlight.OutlineColor = Color3.fromRGB(255, 70, 70)
-				alliHighlight.FillTransparency = 0.5
-				alliHighlight.OutlineTransparency = 0
-				alliHighlight.Parent = character
-			end
-			playSound("rbxassetid://133440767054196")
-			updateEnrageHighlights()
-			notify("Enrage", "Enrage active: nearby players highlighted, speed increased.")
-		else
-			if enrageConnection then
-				enrageConnection:Disconnect()
-				enrageConnection = nil
-			end
-			
-			local highlight = character:FindFirstChild("EnrageSelfHighlight")
-			if highlight then
+		-- Red highlight on Alli
+		local highlight = Instance.new("Highlight")
+		highlight.Name = "EnrageSelfHighlight"
+		highlight.FillColor = Color3.fromRGB(255, 0, 0)
+		highlight.OutlineColor = Color3.fromRGB(255, 70, 70)
+		highlight.FillTransparency = 0.5
+		highlight.Parent = character
+
+		-- Your nearby-player highlighting code can stay here.
+
+		task.delay(SETTINGS.ENRAGE_TIME, function()
+			if highlight and highlight.Parent then
 				highlight:Destroy()
 			end
-			clearEnrageHighlights()
-			notify("Enrage", "Enrage ended.")
-		end
+
+				enrageActive = false
+				updateSpeed()
+		end)
 	end
 
 	-- ================= Y: HYPERCHARGE =================
-
+	local lastHyper = 0
+	
 	local function hypercharge()
-		if not scriptRunning or not getCharacter() then return end
-		hyperchargeToken += 1
-		local thisToken = hyperchargeToken
+		if not scriptRunning
+			or not getCharacter()
+			or tick() - lastHyper < SETTINGS.HYPERCHARGE_COOLDOWN
+			or hyperchargeActive then
+			return
+		end
+
+		lastHyper = tick()
 		hyperchargeActive = true
 		applyMovementSpeed()
+
 		playSound("rbxassetid://96987880339732")
+		hyperchargeToken += 1
+		local thisToken = hyperchargeToken
+
+		lastHyper = tick()
 
 		if hyperchargeEmitter then
 			hyperchargeEmitter:Destroy()
@@ -2250,7 +2302,7 @@ function alliscript()
 		makeButton(
 			"T - Enrage (toggle)",
 			UDim2.new(0, 10, 0, 165),
-			toggleEnrage
+			enrage
 		)
 
 		makeButton(
@@ -2417,7 +2469,7 @@ function alliscript()
 
 	bindAction(
 		"Alli_Enrage",
-		toggleEnrage,
+		enrage,
 		Enum.KeyCode.T,
 		"Enrage",
 		UDim2.new(1, -100, 0, 280)
@@ -2446,6 +2498,11 @@ function alliscript()
 		end,
 		false,
 		Enum.KeyCode.M
+	)
+	
+	ContextActionService:SetImage(
+		"Alli_Hypercharge",
+		"rbxassetid://107827059031781"
 	)
 
 	-- ================= CHARACTER RESPAWN =================
