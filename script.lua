@@ -2735,6 +2735,10 @@ exitBtn.Parent = frame
 
 exitBtn.MouseButton1Click:Connect(function()
 	screenGui:Destroy()
+	local healthgui = playerGui:FindFirstChild("KRSTALINASHealthGui")
+	if healthgui then
+		healthgui:Destroy()
+	end
 end)
 
 -- Roll Up Button
