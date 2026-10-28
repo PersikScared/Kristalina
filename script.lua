@@ -1404,6 +1404,9 @@ function alliscript()
 	local hyperchargeEmitter
 	local hyperchargeToken = 0
 	
+	local hyperIcon
+	local cooldownOverlay
+	local startHyperchargeCooldown
 	
 
 	-- ================= STATE =================
@@ -2086,6 +2089,8 @@ function alliscript()
 						highlight.Adornee = targetCharacter
 					end
 				else
+					
+				
 					local highlight = enrageHighlights[targetPlayer]
 					if highlight then highlight:Destroy() end
 					enrageHighlights[targetPlayer] = nil
@@ -2122,6 +2127,8 @@ function alliscript()
 		lastEnrage = tick()
 		enrageActive = true
 		applyMovementSpeed()
+		
+		updateEnrageHighlights()
 
 		-- Enrage activation sound
 		playSound("rbxassetid://133440767054196")
@@ -2166,6 +2173,10 @@ function alliscript()
 		local thisToken = hyperchargeToken
 
 		lastHyper = tick()
+		
+		if startHyperchargeCooldown then
+			startHyperchargeCooldown()
+		end
 
 		if hyperchargeEmitter then
 			hyperchargeEmitter:Destroy()
@@ -2341,6 +2352,78 @@ function alliscript()
 		allibutton.ScaleType = Enum.ScaleType.Fit
 		allibutton.Image = "rbxassetid://126802968771567"
 		allibutton.Position = UDim2.new(0.6, 0, 0.3, -40)
+		
+		-- Hypercharge icon and cooldown overlay
+		local hyperGui = Instance.new("ScreenGui")
+		hyperGui.Name = "HyperchargeCooldownGUI"
+		hyperGui.ResetOnSpawn = false
+		hyperGui.Parent = playerGui
+
+		hyperIcon = Instance.new("ImageButton")
+		hyperIcon.Name = "HyperchargeIcon"
+		hyperIcon.Size = UDim2.fromScale(0.2, 0.2)
+		hyperIcon.Position = UDim2.new(.8, -10, 0.6, 0)
+		hyperIcon.AnchorPoint = Vector2.new(0, 0.5)
+		hyperIcon.BackgroundTransparency = 1
+		hyperIcon.Image = "rbxassetid://107827059031781"
+		hyperIcon.ScaleType = Enum.ScaleType.Fit
+		hyperIcon.Parent = hyperGui
+
+		local iconCorner = Instance.new("UICorner")
+		iconCorner.CornerRadius = UDim.new(1, 0)
+		iconCorner.Parent = hyperIcon
+
+		cooldownOverlay = Instance.new("Frame")
+		cooldownOverlay.Name = "CooldownOverlay"
+		cooldownOverlay.Size = UDim2.fromScale(.2, .2)
+		cooldownOverlay.SizeConstraint = Enum.SizeConstraint.RelativeYY
+		cooldownOverlay.Position = UDim2.fromScale(0.5, 0.5)
+		cooldownOverlay.AnchorPoint = Vector2.new(0.5, 0.5)
+		cooldownOverlay.BackgroundColor3 = Color3.new(0.27, 0, 0.27)
+		cooldownOverlay.BackgroundTransparency = 0.2
+		cooldownOverlay.BorderSizePixel = 0
+		cooldownOverlay.Visible = false
+		cooldownOverlay.ZIndex = 5
+		cooldownOverlay.Parent = hyperIcon
+
+		local overlayCorner = Instance.new("UICorner")
+		overlayCorner.CornerRadius = UDim.new(1, 0)
+		overlayCorner.Parent = cooldownOverlay
+
+		-- Start the 25-second visual cooldown
+		startHyperchargeCooldown = function()
+			cooldownOverlay.Visible = true
+			cooldownOverlay.Size = UDim2.fromScale(1, 1)
+
+			task.spawn(function()
+				local started = os.clock()
+
+				while scriptRunning do
+					local progress = math.clamp(
+						(os.clock() - started) / SETTINGS.HYPERCHARGE_COOLDOWN,
+						0,
+						1
+					)
+
+					cooldownOverlay.Size = UDim2.fromScale(
+						1 - progress,
+						1 - progress
+					)
+
+					if progress >= 1 then
+						break
+					end
+
+					task.wait()
+				end
+
+				cooldownOverlay.Visible = false
+			end)
+		end
+
+		hyperIcon.Activated:Connect(function()
+			hypercharge()
+		end)
 
 		local isMoving = false
 		allibutton.MouseButton1Down:Connect(function()
@@ -2435,12 +2518,20 @@ function alliscript()
 
 				return Enum.ContextActionResult.Sink
 			end,
-			true,
+			actionName ~= "Alli_Hypercharge",
 			keyCode
 		)
 
 		ContextActionService:SetTitle(actionName, title)
-		ContextActionService:SetPosition(actionName, position)
+		if actionName == "Alli_JumpAttack" then
+			ContextActionService:SetPosition(
+				actionName,
+				UDim2.new(-.3, -32, -.1, -32)
+			)
+		else
+			ContextActionService:SetPosition(actionName, position)
+		end
+		
 	end
 
 	bindAction(
@@ -2448,7 +2539,7 @@ function alliscript()
 		jumpAttack,
 		Enum.KeyCode.E,
 		"Jump Attack",
-		UDim2.new(1, -170, 0, 100)
+		UDim2.new(0.5, 0, 0.5, 0)
 	)
 
 	bindAction(
@@ -2984,7 +3075,7 @@ hideGui.TextSize = 20
 hideGui.Parent = frame
 
 local signature = Instance.new("TextLabel")
-signature.Text = "KristaliK v2.3" --  signature version aur owner naam ke liye (kr)
+signature.Text = "KristaliK v2.5" --  signature version aur owner naam ke liye (kr)
 signature.TextScaled = true
 signature.RichText = true
 signature.Size = UDim2.new(1, 0, 0, 20)
